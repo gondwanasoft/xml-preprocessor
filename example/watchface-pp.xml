@@ -1,0 +1,120 @@
+<WatchFace
+    clipShape="CIRCLE"
+    height="450"
+    width="450">
+    <Metadata
+        key="CLOCK_TYPE"
+        value="ANALOG" />
+
+    <Define>
+        COMPLIC_DIA = 200
+        COMPLIC_MARGIN = 10
+        COMPLIC_FILL_DEFAULT = "#002040"
+        COMPLIC_FILL_ALTERNATIVE = "#004020"
+        COMPLIC_TEXT_HEIGHT = 50
+        COMPLIC_TEXT_SIZE = 40
+        COMPLIC_TEXT_Y = 60
+        COMPLIC_TEXT_COLOUR = "#ffffff"
+        COMPLIC_TEXT_WEIGHT = "SEMI_BOLD"
+        COMPLIC_TEXT_PADDING = 15   # optional amount by which to increase text y
+        COMPLIC_TITLE_HEIGHT = 40
+        COMPLIC_TITLE_SIZE = 26
+        COMPLIC_TITLE_Y = 105
+        COMPLIC_TITLE_COLOUR = "#80c0ff"
+        COMPLIC_TITLE_WEIGHT = COMPLIC_TEXT_WEIGHT
+        def centre(parent_size, self_size):
+            pp_log(parent_size/2, "centre() parent_size halved:")
+            return round((parent_size-self_size)/2)
+    </Define>
+
+    <Symbol id="shortTextComplic">
+        <ComplicationSlot
+            displayName="complic"
+            height="{COMPLIC_DIA}"
+            isCustomizable="TRUE"
+            slotId="1"
+            supportedTypes="SHORT_TEXT EMPTY"
+            width="{SELF.height}"
+            x="{pp_log(COMPLIC_MARGIN if SELF.slotId==1 else PARENT.width - COMPLIC_MARGIN - SELF.width, 'Slot.x:')}"
+            y="{centre(PARENT.height, SELF.height)}"
+            data-text-padding="0" >
+            <BoundingOval
+                height="{PARENT}"
+                width="{PARENT}"
+                x="0"
+                y="0" />
+            <Complication type="SHORT_TEXT">
+                <!-- Background -->
+                <PartDraw
+                    x="0"
+                    y="0"
+                    height="{PARENT}"
+                    width="{PARENT}">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Ellipse
+                        height="{PARENT}"
+                        width="{PARENT}"
+                        x="0"
+                        y="0">
+                        <Fill color="{COMPLIC_FILL_DEFAULT}" />
+                    </Ellipse>
+                </PartDraw>
+                <!-- Text -->
+                <PartText
+                    height="{COMPLIC_TEXT_HEIGHT}"
+                    width="{PARENT}"
+                    x="0"
+                    y="{COMPLIC_TEXT_Y + PARENT.data-text-padding}">
+                    <Text
+                        align="CENTER"
+                        ellipsis="TRUE">
+                        <Font
+                            color="{COMPLIC_TEXT_COLOUR}"
+                            family="SYNC_TO_DEVICE"
+                            size="{COMPLIC_TEXT_SIZE}"
+                            slant="NORMAL"
+                            weight="{COMPLIC_TEXT_WEIGHT}">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TEXT]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <!-- Title -->
+                <PartText
+                    height="{COMPLIC_TITLE_HEIGHT}"
+                    width="{PARENT}"
+                    x="0"
+                    y="{COMPLIC_TITLE_Y}">
+                    <Text
+                        align="CENTER"
+                        ellipsis="TRUE">
+                        <Font
+                            color="{COMPLIC_TITLE_COLOUR}"
+                            family="SYNC_TO_DEVICE"
+                            size="{COMPLIC_TITLE_SIZE}"
+                            slant="NORMAL"
+                            weight="{COMPLIC_TITLE_WEIGHT}">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TITLE]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+    </Symbol>
+
+    <Scene backgroundColor="#ff000000">
+        <!-- Left complication: -->
+        <Use href="shortTextComplic" />
+
+        <!-- Right complication (with extra text padding): -->
+        <Use href="shortTextComplic" slotId="2" data-text-padding="{COMPLIC_TEXT_PADDING}">
+            <!-- Change background colour: -->
+            <Transform href=".//Fill" target="color" value="{COMPLIC_FILL_ALTERNATIVE}" />
+            <!-- Remove title: -->
+            <Delete href="ComplicationSlot/Complication/PartText[2]" />
+        </Use>
+    </Scene>
+</WatchFace>

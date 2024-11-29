@@ -1,0 +1,62 @@
+<WatchFace clipShape="CIRCLE" height="450" width="450">
+    <Metadata key="CLOCK_TYPE" value="ANALOG" />
+
+    <Scene backgroundColor="#ff000000">
+        
+        <ComplicationSlot displayName="complic" height="200" isCustomizable="TRUE" slotId="1" supportedTypes="SHORT_TEXT EMPTY" width="200" x="10" y="125">
+            <BoundingOval height="200" width="200" x="0" y="0" />
+            <Complication type="SHORT_TEXT">
+                
+                <PartDraw x="0" y="0" height="200" width="200">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Ellipse height="200" width="200" x="0" y="0">
+                        <Fill color="#002040" />
+                    </Ellipse>
+                </PartDraw>
+                
+                <PartText height="50" width="200" x="0" y="60">
+                    <Text align="CENTER" ellipsis="TRUE">
+                        <Font color="#ffffff" family="SYNC_TO_DEVICE" size="40" slant="NORMAL" weight="SEMI_BOLD">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TEXT]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                
+                <PartText height="40" width="200" x="0" y="105">
+                    <Text align="CENTER" ellipsis="TRUE">
+                        <Font color="#80c0ff" family="SYNC_TO_DEVICE" size="26" slant="NORMAL" weight="SEMI_BOLD">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TITLE]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+    <ComplicationSlot displayName="complic" height="200" isCustomizable="TRUE" slotId="2" supportedTypes="SHORT_TEXT EMPTY" width="200" x="240" y="125">
+            <BoundingOval height="200" width="200" x="0" y="0" />
+            <Complication type="SHORT_TEXT">
+                
+                <PartDraw x="0" y="0" height="200" width="200">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Ellipse height="200" width="200" x="0" y="0">
+                        <Fill color="#004020" />
+                    </Ellipse>
+                </PartDraw>
+                
+                <PartText height="50" width="200" x="0" y="75">
+                    <Text align="CENTER" ellipsis="TRUE">
+                        <Font color="#ffffff" family="SYNC_TO_DEVICE" size="40" slant="NORMAL" weight="SEMI_BOLD">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TEXT]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                
+                </Complication>
+        </ComplicationSlot>
+    </Scene>
+</WatchFace>
