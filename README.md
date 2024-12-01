@@ -1,8 +1,8 @@
-# Watch Face Format Preprocessor
+# XML Preprocessor
 
-_Watch Face Format (WFF) Preprocessor_ is a program that allows some extensions to the [Google-Samsung Watch Face Format XML schema](https://developer.android.com/training/wearables/wff/watch-face). It reduces the need to repeat values and XML elements, and it allows attribute values to be specified using meaningful names and equations.
+_XML Preprocessor_ is a program that allows some extensions to the [Google-Samsung Watch Face Format XML schema](https://developer.android.com/training/wearables/wff/watch-face). It reduces the need to repeat values and XML elements, and it allows attribute values to be specified using meaningful names and equations.
 
-Because it runs prior to the watchface being built, _WFF Preprocessor_ can't provide any additional on-watch capabilities. This also means that it has no impact on watchface runtime performance, memory usage or battery life.
+Because it runs prior to the watchface being built, _XML Preprocessor_ can't provide any additional on-watch capabilities. This also means that it has no impact on watchface runtime performance, memory usage or battery life.
 
 The preprocessor works by:
 * reading an input file, which is a `watchface.xml` file with preprocessor extensions
@@ -344,7 +344,7 @@ Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that con
 >    * append `.zip` to the `.aab` file's name
 >    * copy `base\res\raw\watchface.xml` from within the `.aab.zip` file
 >    * restore the `.aab` file's name by removing the `.zip`
->  * Empty boilerplate project (*Coming Soon™*).
+>  * [Empty WFF boilerplate project](https://github.com/gondwanasoft/wff-boilerplate).
 
 > **Tip:** To avoid confusion, name your preprocessor input file something other than `watchface.xml`; *eg*, `watchface-pp.xml`.
 
