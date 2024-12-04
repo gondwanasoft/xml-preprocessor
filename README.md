@@ -362,6 +362,8 @@ If there were no errors, the output file will have been created. If you like, yo
 
 `preprocess.py` will normally refuse to write the output file if doing so would overwrite an extant file. To allow it to overwrite, add the `-y` command line parameter.
 
+> **Tip:** If you use Microsoft Windows, [wff-build-script](https://github.com/gondwanasoft/wff-build-script) can run the preprocessor, validate, build and install your watch face with a single command.
+
 ### <a id="build"></a>Build and Test Watchface
 
 Use the output file (typically `watchface.xml`) to build and test the watchface as you normally would (*eg*, see [Google's instructions](https://developer.android.com/training/wearables/wff/setup) and [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)).
