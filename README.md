@@ -339,11 +339,11 @@ Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that con
 > **Tip:** Some lazy ways to obtain an initial file are:
 >  * [Google's samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)
 >  * `watchface.xml` extracted from a [Samsung Watch Face Studio (WFS)](https://developer.samsung.com/watch-face-studio/overview.html) project:
->    * 'Publish' the project in WFS
->    * find the resulting `.aab` file in `build\project`
->    * append `.zip` to the `.aab` file's name
->    * copy `base\res\raw\watchface.xml` from within the `.aab.zip` file
->    * restore the `.aab` file's name by removing the `.zip`
+>    * 'Publish' the project in WFS.
+>    * Find the resulting `.aab` file in `build\[project]`.
+>    * Append `.zip` to the `.aab` file's name.
+>    * Copy `base\res\raw\watchface.xml` from within the `.aab.zip` file.
+>    * Restore the `.aab` file's name by removing the `.zip`.
 >  * [Empty WFF boilerplate project](https://github.com/gondwanasoft/wff-boilerplate).
 
 > **Tip:** To avoid confusion, name your preprocessor input file something other than `watchface.xml`; *eg*, `watchface-pp.xml`.
