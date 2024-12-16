@@ -1,0 +1,74 @@
+<!--
+    Usage: <Use href="rangedValueComplic" x="..." y="..." slotId="..." />
+    If x and/or y are unspecified, they will default to PARENT centre.
+    Externally-defined constants required:
+        COMPLIC_FILL_DEFAULT
+        COMPLIC_TITLE_COLOUR
+        COMPLIC_TEXT_COLOUR
+        COMPLIC_TEXT_SIZE
+        COMPLIC_TEXT_WEIGHT
+-->
+<Widget>
+    <Import href="defines.py" />
+    <Symbol id="rangedValueComplic">
+        <ComplicationSlot
+            displayName="complic"
+            height="{RANGED_COMPLIC_HEIGHT}"
+            isCustomizable="TRUE"
+            supportedTypes="RANGED_VALUE EMPTY"
+            width="{RANGED_COMPLIC_WIDTH}"
+            x="{centre(PARENT.width, SELF.width)}"
+            y="{centre(PARENT.height, SELF.height)}" >
+            <BoundingBox
+                height="{PARENT}"
+                width="{PARENT}"
+                x="0"
+                y="0" />
+            <Complication type="RANGED_VALUE">
+                <PartDraw
+                    x="0"
+                    y="0"
+                    height="{PARENT}"
+                    width="{PARENT}">
+                    <Rectangle
+                        height="{PARENT}"
+                        width="{PARENT}"
+                        x="0"
+                        y="0">
+                        <Fill color="{COMPLIC_FILL_DEFAULT}" />
+                    </Rectangle>
+                    <Rectangle
+                        height="{PARENT}"
+                        width="{PARENT}"
+                        x="0"
+                        y="0">
+                        <Fill color="{RANGED_COMPLIC_FILL_VALUE}" />
+                        <Transform
+                            target="width"
+                            value="{PARENT.width} * [COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]" />
+                    </Rectangle>
+                </PartDraw>
+                <PartText
+                    height="{PARENT}"
+                    width="{PARENT}"
+                    x="0"
+                    y="0">
+                    <Text
+                        align="CENTER"
+                        ellipsis="TRUE">
+                        <Font
+                            color="{COMPLIC_TEXT_COLOUR}"
+                            family="SYNC_TO_DEVICE"
+                            size="{COMPLIC_TEXT_SIZE}"
+                            slant="NORMAL"
+                            weight="{COMPLIC_TEXT_WEIGHT}">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.RANGED_VALUE_VALUE]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+    </Symbol>
+</Widget>

@@ -26,6 +26,9 @@ This documentation assumes:
     * [`<Delete>`](#delete)
     * [`<Symbol>` Candidate Selection](#candidates)
   * [XML Element `{Expression}`s](#expressions)
+  * [`<Import>` Elements](#import)
+    * [`<Import>` XML](#import_xml)
+    * [`<Import>` Python](#import_py)
   * [Example](#full_example)
 * [Installation](#installation)
 * [Usage](#usage)
@@ -36,6 +39,7 @@ This documentation assumes:
     * [`pp_log()`](#pp_log)
 * [Limitations](#limitations)
 * [Other Applications](#applications)
+  * [XSLT](#xslt)
 
 ## <a id="features"></a>FEATURES
 
@@ -314,11 +318,74 @@ Mathematical expressions in `<Define>` or `{expression}` can result in non-integ
 
 ---
 
+### <a id="import"></a>`<Import>` Elements
+
+`<Import>` elements let you merge XML or Python code from separate files into your main input file.
+
+Notes:
+
+* All `<Import>` elements must be direct children of the root XML element.
+* An `<Import>`ed file can contain `<Import>` elements.
+* In addition to the filename, a path (directory/folder) can be included in `href`.
+* `href` paths are relative to the directory of the file containing the `<Import>` element.
+
+> **Warning:** `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
+
+
+#### <a id="import_xml"></a>`<Import>` XML
+
+Usage:
+
+    <Import href="filename.xml" />
+
+This will replace the `<Import`> element with the XML elements within the top-level `<Widget>` element contained in `filename.xml`. For example, if `my_component.xml` contained this:
+
+    <Widget>
+        <PartDraw... />
+        <PartText... />
+    </Widget>
+
+...then `<Import href="my_component.xml" />` would be replaced with this:
+
+    <PartDraw... />
+    <PartText... />
+
+`<Import>` can be employed to reuse [`<Symbol>`](#symbol)s across projects. In this case, the imported file will typically contain a [`<Symbol>`](#symbol) element within `<Widget>`. The imported `<Symbol>` can then be accessed by `<Use>` elements. It will normally be necessary to customise the imported `<Symbol>`. As with `<Symbol>`s contained in the input file, imported `<Symbol>`s can be customised using [top-level attributes](#use_attrib) (including `data-` attributes), [`<Transform>`](#transform) and [`<Delete>`](#delete). In addition, imported `<Symbol>`s can use variables and functions from [`<Define>`](#defines) elements declared in the context into which they are imported.
+
+#### <a id="import_py"></a>`<Import>` Python
+
+Usage:
+
+    <Import href="filename.py" />
+
+This will replace the `<Import`> element with a [`<Define>`](#defines) element that contains the contents of `filename.py`. For example, if `my_code.py` contained this:
+
+    COMPLICATION_DIAMETER = 100
+    def centre(parent_size, self_size): return round((parent_size-self_size)/2)
+
+...then `<Import href="my_code.py" />` would be replaced with this:
+
+    <Define>
+        COMPLICATION_DIAMETER = 100
+        def centre(parent_size, self_size): return round((parent_size-self_size)/2)
+    </Define>
+
+Importing Python from a `.py` file has these advantages:
+
+* common constants and functions can be reused
+* coding assistance can be obtained by editing `.py` files in a suitable IDE or code editor.
+
+If the preprocessor's `<Import>` element is inadequate, you can use Python's native `import` capabilities within a `<Define>` element.
+
+---
+
 ### <a id="full_example"></a>Example
 
-A complete example of a preprocessor input file is [here](example/watchface-pp.xml). The corresponding `watchface.xml` produced by the preprocessor is [here](example/watchface.xml).
+A complete example of a preprocessor input file is [here](example/watchface/watchface-pp.xml). It imports [ranged-complic.xml](example/watchface/widgets/ranged-complic/ranged-complic.xml) and [defines.py](example/watchface/widgets/ranged-complic/defines.py). The corresponding `watchface.xml` produced by the preprocessor is [here](example/watchface/src/main/res/raw/watchface.xml).
 
-> **Note:** In this artifical example, the input file is larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
+> **Notes:**
+> * This example attempts to demonstrate all of the preprocessor's capabilities; it is not a sensible way to structure an actual project.
+> * The input files are larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
 
 ## <a id="installation"></a>INSTALLATION
 
@@ -427,7 +494,7 @@ Python code in `<Define>` elements is global, rather than being encapsulated wit
 
 [Indentation](#indentation) of Python code in `<Define>` elements is rudimentary. Using `Tab` characters is especially risky; stick to `space`s.
 
-IDEs and code editors are unlikely to provide coding assistance for Python code in `<Define>` elements or `{expression}`s. This is because such code is considered to be XML element text or attribute value strings; only the preprocessor knows otherwise.
+IDEs and code editors are unlikely to provide coding assistance for Python code in `<Define>` elements or `{expression}`s. This is because such code is considered to be XML element text or attribute value strings; only the preprocessor knows otherwise. A partial workaround is to use [`<Import>`](#import_py).
 
 > **Tip:** If you're desperate for Python coding help, put the Python code in a `.py` file and open it in a Python development environment.
 
@@ -446,3 +513,7 @@ Although `preprocessor.py` was written specifically to help with WFF XML, the ap
 * The output file will be reformatted.
 * XML `<!--comments-->` will not appear in the output file.
 * `CDATA` strings and escape characters (`&amp;`, *etc*) may be changed.
+
+### <a id="xslt"></a>XSLT
+
+XSLT is a more powerful tool for generating XML. It doesn't rely on custom XML elements and attribute values, but uses a separate `.xslt` file to describe the transformations required. If your need is primarily data/format transformation, XSLT is superior.

@@ -11,7 +11,7 @@ import xml.etree.ElementTree as xmlpp_ET
 class xmlpp_error(Exception):   # custom Exception class
     def __init__(self, message):
         print(f"❌ Preprocessor error: {message}")
-        print("   For more info, run preprocessor with -d argument")
+        print("   For more info, run preprocessor with -d argument.")
         exit(1)
 
 xmlpp_DEBUG = False
@@ -30,7 +30,7 @@ def xmlpp_parse_args():     # parse command-line arguments
         else: xmlpp_source_file = xmlpp_arg
 
     if xmlpp_source_file is None or xmlpp_dest_file is None or xmlpp_USAGE_ERROR:
-        print("XML Preprocessor 1.00")
+        print("XML Preprocessor 1.1.0")
         print("Usage: preprocess.py sourceFile destinationFile [-d] [-y]")
         print("   -d prints debugging info")
         print("   -y overwrites destinationFile")
@@ -43,13 +43,47 @@ def xmlpp_parse_args():     # parse command-line arguments
         xmlpp_overwrite_input = input("Desination file already exists; overwrite it (y/n)? ")
         if (xmlpp_overwrite_input != "y"): exit(2)
 
-def xmlpp_read_source(xmlpp_source_file):
-    global xmlpp_tree, xmlpp_root
-    xmlpp_tree = xmlpp_ET.parse(xmlpp_source_file)
+def xmlpp_load_tree(xmlpp_source, xmlpp_require_widget=False):
+    # Read source, and recursively splice in <Import> files.
+    # Returns tree.
+
+    if xmlpp_DEBUG and not xmlpp_require_widget: print(f"Loading source file(s)...")
+    if xmlpp_DEBUG: print(f"   Loading \"{xmlpp_source}\"")
+    try:
+        xmlpp_tree = xmlpp_ET.parse(xmlpp_source)
+    except Exception as e:
+        raise xmlpp_error(f"{type(e).__name__} in \"{xmlpp_source}\": {sys.exception()}")
+
     xmlpp_root = xmlpp_tree.getroot()
+    if xmlpp_require_widget and xmlpp_root.tag != "Widget":
+        raise xmlpp_error(f"Root element of imported file \"{xmlpp_source}\" isn't <Widget>.")
+    xmlpp_index = 0
+    while xmlpp_index < len(xmlpp_root):
+        xmlpp_child_el = xmlpp_root[xmlpp_index]
+        if xmlpp_child_el.tag == "Import":
+            xmlpp_href = xmlpp_child_el.get('href')
+            if xmlpp_DEBUG: print(f"      Found <Import href=\"{xmlpp_href}\" />")
+            xmlpp_include_path = os.path.join(os.path.dirname(xmlpp_source), xmlpp_href)    # assume href is relative to source
+            if not os.path.exists(xmlpp_include_path):
+                raise xmlpp_error(f"Can't find \"{xmlpp_href}\" imported by \"{xmlpp_source}\".")
+            xmlpp_root.remove(xmlpp_child_el)    # remove <Import>
+            if xmlpp_href.lower().endswith('.py'):
+                xmlpp_el = xmlpp_ET.Element('Define')
+                with open(xmlpp_include_path, 'r') as xmlpp_file:
+                    xmlpp_el.text = f"\n{xmlpp_file.read()}\n"  # \n so as not to interfere with python indentation
+                xmlpp_root.insert(xmlpp_index, xmlpp_el)
+            else:   # assume .xml
+                xmlpp_child_tree = xmlpp_load_tree(xmlpp_include_path, True)  # recurse
+                xmlpp_child_root = xmlpp_child_tree.getroot()
+                for xmlpp_el in xmlpp_child_root:    # insert <Widget> children
+                    #print("inserting "+xmlpp_el.tag)
+                    xmlpp_root.insert(xmlpp_index, xmlpp_el)
+                    xmlpp_index += 1   # skip over inserted elements coz they've already been recursed in case of nested <Import>s
+        xmlpp_index += 1
+    return xmlpp_tree
 
 def xmlpp_exec_all_definitions():   # execute all <Define> elements and delete them
-    if xmlpp_DEBUG: print("Executing <Define>s...")
+    if xmlpp_DEBUG: print("\nExecuting <Define>s...")
 
     def xmlpp_exec_definitions(xmlpp_text):
         def xmlpp_find_indent_size(xmlpp_firstLine):
@@ -74,7 +108,10 @@ def xmlpp_exec_all_definitions():   # execute all <Define> elements and delete t
             #print("Before strip:\n\""+el.text+"\"")
             #print("After strip:\n\""+xmlpp_text+"\"\n")
             if xmlpp_DEBUG: print("\n".join(["   " + line for line in xmlpp_text.split("\n")]))
-            exec(xmlpp_text, globals())
+            try:
+                exec(xmlpp_text, globals())
+            except Exception as e:
+                raise xmlpp_error(f"{type(e).__name__} executing code in <Define>: {sys.exception()}")
 
     xmlpp_define_els = []
     for xmlpp_el in xmlpp_root.iter('Define'):
@@ -133,6 +170,7 @@ def xmlpp_replace_all_uses(): # replace all <Use> elements
                     xmlpp_href = xmlpp_href[1:]     # [1:] strips # from href
                 if xmlpp_DEBUG:
                     print(f'   Replacing <Use href="#{xmlpp_href}">')
+                if xmlpp_href not in xmlpp_symbols: raise xmlpp_error(f"Can't find <Symbol id=\"{xmlpp_href}\" />")
                 xmlpp_symbol = xmlpp_symbols[xmlpp_href]
                 xmlpp_delete_list = xmlpp_child_el.findall("Delete")
                 xmlpp_transform_list = xmlpp_child_el.findall("Transform")
@@ -238,7 +276,7 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
             xmlpp_exp = xmlpp_eval_parent_terms(xmlpp_exp, r'(PARENT)', xmlpp_attrib_name)
 
             # Process SELF.attribName terms:
-            #print('processing SELF...')     # TODO del
+            #print('processing SELF...')
             xmlpp_matches = re.split(r'(SELF\.[a-zA-Z-]+)', xmlpp_exp)
             #print(xmlpp_exp,xmlpp_matches)
             # Process all odd-numbered matches[]:
@@ -247,10 +285,10 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
                 xmlpp_attrib_value = xmlpp_el.get(xmlpp_self_attrib)
                 if xmlpp_attrib_value == None:
                     raise xmlpp_error('Can\'t find {0} SELF attribute named "{1}"'.format(xmlpp_el.tag, xmlpp_self_attrib))
-                #print(f"   {xmlpp_self_attrib}={xmlpp_attrib_value}")   # TODO del
+                #print(f"   {xmlpp_self_attrib}={xmlpp_attrib_value}")
                 xmlpp_matches[xmlpp_matchIndex] = xmlpp_attrib_value
             xmlpp_exp = "".join(xmlpp_matches)
-            #print(f'done: {xmlpp_exp}')     # TODO del
+            #print(f'done: {xmlpp_exp}')
 
             return xmlpp_exp
 
@@ -310,7 +348,7 @@ def xmlpp_remove_data_attributes():
 
 def xmlpp_write_dest(xmlpp_dest_file):
     xmlpp_tree.write(xmlpp_dest_file)
-    if xmlpp_DEBUG: print(f"✅  {xmlpp_dest_file} written.")
+    if xmlpp_DEBUG: print(f"\n✅  {xmlpp_dest_file} written.")
 
 def pp_log(xmlpp_arg, xmlpp_prompt="pp_log arg:"):
     # Console logging function callable from watchface-pp.xml functions and {expression}s.
@@ -321,7 +359,8 @@ def pp_log(xmlpp_arg, xmlpp_prompt="pp_log arg:"):
     return xmlpp_arg
 
 xmlpp_parse_args()
-xmlpp_read_source(xmlpp_source_file)
+xmlpp_tree = xmlpp_load_tree(xmlpp_source_file)
+xmlpp_root = xmlpp_tree.getroot()
 xmlpp_exec_all_definitions()
 xmlpp_extract_symbols()
 xmlpp_replace_all_uses()

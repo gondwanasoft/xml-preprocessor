@@ -58,5 +58,28 @@
                 
                 </Complication>
         </ComplicationSlot>
+    <ComplicationSlot displayName="complic" height="50" isCustomizable="TRUE" supportedTypes="RANGED_VALUE EMPTY" width="100" x="175" y="350" slotId="3">
+            <BoundingBox height="50" width="100" x="0" y="0" />
+            <Complication type="RANGED_VALUE">
+                <PartDraw x="0" y="0" height="50" width="100">
+                    <Rectangle height="50" width="100" x="0" y="0">
+                        <Fill color="#002040" />
+                    </Rectangle>
+                    <Rectangle height="50" width="100" x="0" y="0">
+                        <Fill color="#80c0ff" />
+                        <Transform target="width" value="100 * [COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]" />
+                    </Rectangle>
+                </PartDraw>
+                <PartText height="50" width="100" x="0" y="0">
+                    <Text align="CENTER" ellipsis="TRUE">
+                        <Font color="#ffffff" family="SYNC_TO_DEVICE" size="40" slant="NORMAL" weight="SEMI_BOLD">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.RANGED_VALUE_VALUE]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
     </Scene>
 </WatchFace>

@@ -27,6 +27,8 @@
             return round((parent_size-self_size)/2)
     </Define>
 
+    <Import href="widgets/ranged-complic/ranged-complic.xml" />
+
     <Symbol id="shortTextComplic">
         <ComplicationSlot
             displayName="complic"
@@ -116,5 +118,8 @@
             <!-- Remove title: -->
             <Delete href="ComplicationSlot/Complication/PartText[2]" />
         </Use>
+
+        <!-- Top complication: -->
+        <Use href="rangedValueComplic" y="350" slotId="3"/>
     </Scene>
 </WatchFace>
