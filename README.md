@@ -67,7 +67,8 @@ All `<Define>` elements must be direct children of the `<Watchface>` element.
 
 Everything between the opening and closing tags (`<Define>` and `</Define>`) must be Python variable and function definitions.
 
-> **WARNING:** If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, *Bad Things™* will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
+> [!WARNING]
+> If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, *Bad Things™* will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
 
 <a id="indentation"></a>Your Python code must comply with Python's indentation requirements. Within a `<Define>` element, you have these options:
 
@@ -176,7 +177,8 @@ If you specify attribute values in a `<Use>` element, those values (except for t
 
 Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
 
-> **Warning:** [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
+> [!WARNING]
+> [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
 
         <Symbol id="icon">
             <PartImage
@@ -199,9 +201,11 @@ Attribute values specified in a `<Use>` element do not change the `<Symbol>`; th
 
 Attributes with names that start with `data-` (*eg*, `data-gauge-diameter`) will be deleted at the end of preprocessing. This can be useful for attributes that will be used internally by the `<Use>` instance (*eg*, `{PARENT.data-gauge-diameter}`) but which are not valid in WFF.
 
-> **Warning:** if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; *eg*, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; *eg*, `PARENT.data-gauge-diameter - 10`.
+> [!WARNING]
+> if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; *eg*, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; *eg*, `PARENT.data-gauge-diameter - 10`.
 
-> **Tip:** Within `<Symbol>` definitions, you can initialise attribute values (including those in sub-elements) to default values. This way, you don't need to specify them when the `<Symbol>` is `<Use>`d and the defaults are appropriate. You only need to specify attribute values in `<Use>` when the values specified within the `<Symbol>` need to be changed.
+> [!TIP]
+> Within `<Symbol>` definitions, you can initialise attribute values (including those in sub-elements) to default values. This way, you don't need to specify them when the `<Symbol>` is `<Use>`d and the defaults are appropriate. You only need to specify attribute values in `<Use>` when the values specified within the `<Symbol>` need to be changed.
 
 #### <a id="transform"></a>`<Transform>`
 
@@ -237,7 +241,8 @@ A more flexible way to customise `<Symbol>` attribute values is to include one o
 
 * `".//*[@direction='CLOCKWISE']"` matches elements of any type that have an attribute named `direction` with a value of `CLOCKWISE`.
 
-> **Warning:** `<Transform>` elements will be applied to *all* elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
+> [!WARNING]
+> `<Transform>` elements will be applied to *all* elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
 
 Attribute value changes specified in a `<Use> <Transform>` element don't change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute value changes specified in prior `<Use> <Transform>`s.
 
@@ -249,7 +254,8 @@ You can usually achieve the same effect as `<Transform>` by [setting attribute v
 
 `<Delete>` is similar to `<Transform>`, except that it simply removes elements (including their children) from the `<Symbol>` that match its `href` attribute value. `href` can take [XPath expressions](#xpath).
 
-> **Warning:** `<Delete>` elements will be applied to *all* elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
+> [!WARNING]
+> `<Delete>` elements will be applied to *all* elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
 
 Elements that are deleted by a `<Use> <Delete>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will still contain elements that were deleted in prior `<Use> <Delete>`s.
 
@@ -329,7 +335,8 @@ Notes:
 * In addition to the filename, a path (directory/folder) can be included in `href`.
 * `href` paths are relative to the directory of the file containing the `<Import>` element.
 
-> **Warning:** `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
+> [!WARNING]
+> `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
 
 
 #### <a id="import_xml"></a>`<Import>` XML
@@ -383,7 +390,7 @@ If the preprocessor's `<Import>` element is inadequate, you can use Python's nat
 
 A complete example of a preprocessor input file is [here](example/watchface/watchface-pp.xml). It imports [ranged-complic.xml](example/watchface/widgets/ranged-complic/ranged-complic.xml) and [defines.py](example/watchface/widgets/ranged-complic/defines.py). The corresponding `watchface.xml` produced by the preprocessor is [here](example/watchface/src/main/res/raw/watchface.xml).
 
-> **Notes:**
+> [!NOTE]
 > * This example attempts to demonstrate all of the preprocessor's capabilities; it is not a sensible way to structure an actual project.
 > * The input files are larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
 
@@ -393,7 +400,8 @@ Install a relatively recent version of [Python](https://www.python.org/) (*eg*, 
 
 Put `preprocess.py` somewhere where you can conveniently access it from your watchface project. For example, if you use the same file structure as Google's [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat), you could put `preprocess.py` in the same folder as `gradlew`.
 
-> **IMPORTANT**: If your project already contains a `watchface\src\main\res\raw\watchface.xml` file (and it probably does), ***COPY THIS FILE TO SOMEWHERE SAFE*** because you will probably use the preprocessor to overwrite it.
+> [!IMPORTANT]
+> If your project already contains a `watchface\src\main\res\raw\watchface.xml` file (and it probably does), ***COPY THIS FILE TO SOMEWHERE SAFE*** because you will probably use the preprocessor to overwrite it.
 
 ## <a id="usage"></a>USAGE
 
@@ -401,9 +409,11 @@ Put `preprocess.py` somewhere where you can conveniently access it from your wat
 
 Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that contains WFF code and any preprocessor features that you want to use. You can save this anywhere; your project's `watchface` subfolder is recommended.
 
-> **Tip:** For an initial test, you don't have to use any preprocessor features; you can copy a standard `watchface.xml` file.
+> [!TIP]
+> For an initial test, you don't have to use any preprocessor features; you can copy a standard `watchface.xml` file.
 
-> **Tip:** Some lazy ways to obtain an initial file are:
+> [!TIP]
+> Some lazy ways to obtain an initial file are:
 >  * [Google's samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)
 >  * `watchface.xml` extracted from a [Samsung Watch Face Studio (WFS)](https://developer.samsung.com/watch-face-studio/overview.html) project:
 >    * 'Publish' the project in WFS.
@@ -413,9 +423,11 @@ Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that con
 >    * Restore the `.aab` file's name by removing the `.zip`.
 >  * [Empty WFF boilerplate project](https://github.com/gondwanasoft/wff-boilerplate).
 
-> **Tip:** To avoid confusion, name your preprocessor input file something other than `watchface.xml`; *eg*, `watchface-pp.xml`.
+> [!TIP]
+> To avoid confusion, name your preprocessor input file something other than `watchface.xml`; *eg*, `watchface-pp.xml`.
 
-> **Tip:** [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; *eg*: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
+> [!TIP]
+> [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; *eg*: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
 
 ### <a id="run"></a>Run the Preprocessor
 
@@ -425,11 +437,15 @@ From a command prompt, execute `preprocess.py`, passing the input filename and o
 
 If there were no errors, the output file will have been created. If you like, you can look at it in a text/code editor to see the code generated by the preprocessor.
 
-> <a id="ugly"></a>**Tip:** The formatting of the XML file generated by the preprocessor can be ugly. To make the file easier to understand, format/prettify/beautify it using an IDE, code editor or other app.
+> <a id="ugly"></a>
+
+> [!TIP]
+> The formatting of the XML file generated by the preprocessor can be ugly. To make the file easier to understand, format/prettify/beautify it using an IDE, code editor or other app.
 
 `preprocess.py` will normally refuse to write the output file if doing so would overwrite an extant file. To allow it to overwrite, add the `-y` command line parameter.
 
-> **Tip:** If you use Microsoft Windows, [wff-build-script](https://github.com/gondwanasoft/wff-build-script) can run the preprocessor, validate, build and install your watch face with a single command.
+> [!TIP]
+> If you use Microsoft Windows, [wff-build-script](https://github.com/gondwanasoft/wff-build-script) can run the preprocessor, validate, build and install your watch face with a single command.
 
 ### <a id="build"></a>Build and Test Watchface
 
@@ -439,7 +455,8 @@ Use the output file (typically `watchface.xml`) to build and test the watchface 
 
 If the preprocessor can't process the input file, it will either display an error message or throw an uncaught exception. In either case, the console output should help you to identify the problem.
 
-> **Note:** Processing stops as soon as one error is encountered. There could be multiple errors in the input file, so you need to keep correcting errors and rerunning the preprocessor until it completes successfully.
+> [!NOTE]
+> Processing stops as soon as one error is encountered. There could be multiple errors in the input file, so you need to keep correcting errors and rerunning the preprocessor until it completes successfully.
 
 If the error message doesn't help, examine the output file to see how it differs from what you wanted.
 
@@ -447,9 +464,12 @@ For additional information, you can run `preprocess.py` again but with the `-d` 
 
 Even if the preprocessor completes successfully, it's eminently possible for the output file to be rejected by the watchface build process (`gradle`), or for the resulting watchface to look wrong or behave unexpectedly. Examine the output file and/or use `-d` to work out why.
 
-> <a id="validator"></a>**Tip:** If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (*etc*) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (*eg*, `watchface-pp.xml`).
+> <a id="validator"></a>
+> [!NOTE]
+> If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (*etc*) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (*eg*, `watchface-pp.xml`).
 
-> **Tip:** Many WFF elements can be given a `name` attribute. Using unique values for `name`s can help you to match elements between your `watchface-pp.xml` and `watchface.xml` files. This can be especially useful since comments in the input file are not included in the output file. Be aware that, if you employ `<Use>` more than once for a particular `<Symbol>`, elements within the `<Symbol>` will be repeated in `watchface.xml` so `name` attributes will no longer be unique.
+> [!TIP]
+> Many WFF elements can be given a `name` attribute. Using unique values for `name`s can help you to match elements between your `watchface-pp.xml` and `watchface.xml` files. This can be especially useful since comments in the input file are not included in the output file. Be aware that, if you employ `<Use>` more than once for a particular `<Symbol>`, elements within the `<Symbol>` will be repeated in `watchface.xml` so `name` attributes will no longer be unique.
 
 #### <a id="pp_log"></a>`pp-log()`
 
@@ -478,7 +498,8 @@ This works because `pp_log()` returns the value of its first argument; so, if th
 
 Note that you can use `{expression}`-specific features (such as `PARENT`) in `pp_log()` when it is called from within an attribute value `{expression}`.
 
-> **Tip:** You may need to employ a variety of types of quotation marks when embedding a call to `pp_log()` in an attribute value string.
+> [!TIP]
+> You may need to employ a variety of types of quotation marks when embedding a call to `pp_log()` in an attribute value string.
 
 ## <a id="limitations"></a>LIMITATIONS
 
@@ -496,7 +517,8 @@ Python code in `<Define>` elements is global, rather than being encapsulated wit
 
 IDEs and code editors are unlikely to provide coding assistance for Python code in `<Define>` elements or `{expression}`s. This is because such code is considered to be XML element text or attribute value strings; only the preprocessor knows otherwise. A partial workaround is to use [`<Import>`](#import_py).
 
-> **Tip:** If you're desperate for Python coding help, put the Python code in a `.py` file and open it in a Python development environment.
+> [!TIP]
+> If you're desperate for Python coding help, put the Python code in a `.py` file and open it in a Python development environment.
 
 `watchface-pp.xml` or `watchface.xml` files used by the preprocessor can't be imported into [Samsung's Watch Face Studio](https://developer.samsung.com/watch-face-studio/overview.html) because that app doesn't support importing XML.
 
