@@ -67,7 +67,8 @@ All `<Define>` elements must be direct children of the `<Watchface>` element.
 
 Everything between the opening and closing tags (`<Define>` and `</Define>`) must be Python variable and function definitions.
 
-> **WARNING:** If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, *Bad Things™* will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
+> [!WARNING]
+> If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, *Bad Things™* will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
 
 <a id="indentation"></a>Your Python code must comply with Python's indentation requirements. Within a `<Define>` element, you have these options:
 
@@ -176,7 +177,8 @@ If you specify attribute values in a `<Use>` element, those values (except for t
 
 Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
 
-> **Warning:** [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
+> [!WARNING]
+> [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
 
         <Symbol id="icon">
             <PartImage
