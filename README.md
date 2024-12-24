@@ -465,6 +465,7 @@ For additional information, you can run `preprocess.py` again but with the `-d` 
 Even if the preprocessor completes successfully, it's eminently possible for the output file to be rejected by the watchface build process (`gradle`), or for the resulting watchface to look wrong or behave unexpectedly. Examine the output file and/or use `-d` to work out why.
 
 > <a id="validator"></a>
+
 > [!NOTE]
 > If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (*etc*) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (*eg*, `watchface-pp.xml`).
 
