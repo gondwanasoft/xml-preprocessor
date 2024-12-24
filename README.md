@@ -201,9 +201,11 @@ Attribute values specified in a `<Use>` element do not change the `<Symbol>`; th
 
 Attributes with names that start with `data-` (*eg*, `data-gauge-diameter`) will be deleted at the end of preprocessing. This can be useful for attributes that will be used internally by the `<Use>` instance (*eg*, `{PARENT.data-gauge-diameter}`) but which are not valid in WFF.
 
-> **Warning:** if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; *eg*, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; *eg*, `PARENT.data-gauge-diameter - 10`.
+> [!WARNING]
+> if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; *eg*, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; *eg*, `PARENT.data-gauge-diameter - 10`.
 
-> **Tip:** Within `<Symbol>` definitions, you can initialise attribute values (including those in sub-elements) to default values. This way, you don't need to specify them when the `<Symbol>` is `<Use>`d and the defaults are appropriate. You only need to specify attribute values in `<Use>` when the values specified within the `<Symbol>` need to be changed.
+> [!TIP]
+> Within `<Symbol>` definitions, you can initialise attribute values (including those in sub-elements) to default values. This way, you don't need to specify them when the `<Symbol>` is `<Use>`d and the defaults are appropriate. You only need to specify attribute values in `<Use>` when the values specified within the `<Symbol>` need to be changed.
 
 #### <a id="transform"></a>`<Transform>`
 
