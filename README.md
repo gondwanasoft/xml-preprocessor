@@ -237,7 +237,8 @@ A more flexible way to customise `<Symbol>` attribute values is to include one o
 
 * `".//*[@direction='CLOCKWISE']"` matches elements of any type that have an attribute named `direction` with a value of `CLOCKWISE`.
 
-> **Warning:** `<Transform>` elements will be applied to *all* elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
+> [!WARNING]
+> `<Transform>` elements will be applied to *all* elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
 
 Attribute value changes specified in a `<Use> <Transform>` element don't change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute value changes specified in prior `<Use> <Transform>`s.
 
@@ -249,7 +250,8 @@ You can usually achieve the same effect as `<Transform>` by [setting attribute v
 
 `<Delete>` is similar to `<Transform>`, except that it simply removes elements (including their children) from the `<Symbol>` that match its `href` attribute value. `href` can take [XPath expressions](#xpath).
 
-> **Warning:** `<Delete>` elements will be applied to *all* elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
+> [!WARNING]
+> `<Delete>` elements will be applied to *all* elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
 
 Elements that are deleted by a `<Use> <Delete>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will still contain elements that were deleted in prior `<Use> <Delete>`s.
 
@@ -329,7 +331,8 @@ Notes:
 * In addition to the filename, a path (directory/folder) can be included in `href`.
 * `href` paths are relative to the directory of the file containing the `<Import>` element.
 
-> **Warning:** `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
+> [!WARNING]
+> `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
 
 
 #### <a id="import_xml"></a>`<Import>` XML
@@ -383,7 +386,7 @@ If the preprocessor's `<Import>` element is inadequate, you can use Python's nat
 
 A complete example of a preprocessor input file is [here](example/watchface/watchface-pp.xml). It imports [ranged-complic.xml](example/watchface/widgets/ranged-complic/ranged-complic.xml) and [defines.py](example/watchface/widgets/ranged-complic/defines.py). The corresponding `watchface.xml` produced by the preprocessor is [here](example/watchface/src/main/res/raw/watchface.xml).
 
-> **Notes:**
+> [!NOTE]
 > * This example attempts to demonstrate all of the preprocessor's capabilities; it is not a sensible way to structure an actual project.
 > * The input files are larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
 
@@ -478,7 +481,8 @@ This works because `pp_log()` returns the value of its first argument; so, if th
 
 Note that you can use `{expression}`-specific features (such as `PARENT`) in `pp_log()` when it is called from within an attribute value `{expression}`.
 
-> **Tip:** You may need to employ a variety of types of quotation marks when embedding a call to `pp_log()` in an attribute value string.
+> [!TIP]
+> You may need to employ a variety of types of quotation marks when embedding a call to `pp_log()` in an attribute value string.
 
 ## <a id="limitations"></a>LIMITATIONS
 
@@ -496,7 +500,8 @@ Python code in `<Define>` elements is global, rather than being encapsulated wit
 
 IDEs and code editors are unlikely to provide coding assistance for Python code in `<Define>` elements or `{expression}`s. This is because such code is considered to be XML element text or attribute value strings; only the preprocessor knows otherwise. A partial workaround is to use [`<Import>`](#import_py).
 
-> **Tip:** If you're desperate for Python coding help, put the Python code in a `.py` file and open it in a Python development environment.
+> [!TIP]
+> If you're desperate for Python coding help, put the Python code in a `.py` file and open it in a Python development environment.
 
 `watchface-pp.xml` or `watchface.xml` files used by the preprocessor can't be imported into [Samsung's Watch Face Studio](https://developer.samsung.com/watch-face-studio/overview.html) because that app doesn't support importing XML.
 
