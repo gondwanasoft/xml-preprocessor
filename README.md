@@ -178,7 +178,8 @@ If you specify attribute values in a `<Use>` element, those values (except for t
 
 Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
 
-> [!WARNING] > [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
+> [!WARNING]
+> [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
 
         <Symbol id="icon">
             <PartImage
@@ -241,7 +242,8 @@ A more flexible way to customise `<Symbol>` attribute values is to include one o
 
 - `".//*[@direction='CLOCKWISE']"` matches elements of any type that have an attribute named `direction` with a value of `CLOCKWISE`.
 
-> [!WARNING] > `<Transform>` elements will be applied to _all_ elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
+> [!WARNING]
+> `<Transform>` elements will be applied to _all_ elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
 
 Attribute value changes specified in a `<Use> <Transform>` element don't change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute value changes specified in prior `<Use> <Transform>`s.
 
@@ -253,7 +255,8 @@ You can usually achieve the same effect as `<Transform>` by [setting attribute v
 
 `<Delete>` is similar to `<Transform>`, except that it simply removes elements (including their children) from the `<Symbol>` that match its `href` attribute value. `href` can take [XPath expressions](#xpath).
 
-> [!WARNING] > `<Delete>` elements will be applied to _all_ elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
+> [!WARNING]
+> `<Delete>` elements will be applied to _all_ elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
 
 Elements that are deleted by a `<Use> <Delete>` element do not change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will still contain elements that were deleted in prior `<Use> <Delete>`s.
 
@@ -333,7 +336,8 @@ Notes:
 - In addition to the filename, a path (directory/folder) can be included in `href`.
 - `href` paths are relative to the directory of the file containing the `<Import>` element.
 
-> [!WARNING] > `<Import>` doesn't provide namespacing, local scoping, _etc_. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; _eg_, `RECT_RANGED_COMPLIC_WIDTH`.
+> [!WARNING]
+> `<Import>` doesn't provide namespacing, local scoping, _etc_. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; _eg_, `RECT_RANGED_COMPLIC_WIDTH`.
 
 #### <a id="import_xml"></a>`<Import>` XML
 
@@ -436,7 +440,8 @@ Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that con
 > [!TIP]
 > To avoid confusion, name your preprocessor input file something other than `watchface.xml`; _eg_, `watchface-pp.xml`.
 
-> [!TIP] > [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; _eg_: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
+> [!TIP]
+> [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; _eg_: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
 
 ### <a id="run"></a>Run the Preprocessor
 
