@@ -5,41 +5,42 @@ _XML Preprocessor_ is a program that allows some extensions to the [Google-Samsu
 Because it runs prior to the watchface being built, _XML Preprocessor_ can't provide any additional on-watch capabilities. This also means that it has no impact on watchface runtime performance, memory usage or battery life.
 
 The preprocessor works by:
-* reading an input file, which is a `watchface.xml` file with preprocessor extensions
-* processing the extensions to create the specified XML elements and attribute values
-* writing a standard WFF output file (typically `watchface.xml`).
+
+- reading an input file, which is a `watchface.xml` file with preprocessor extensions
+- processing the extensions to create the specified XML elements and attribute values
+- writing a standard WFF output file (typically `watchface.xml`).
 
 This documentation assumes:
 
-* familiarity with WFF
-* familiarity with the process for building, installing and testing watchfaces using WFF  (*eg*, [Google's instructions](https://developer.android.com/training/wearables/wff/setup) and [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat))
-* familiarity with Python
-* the use of Microsoft Windows (although the preprocessor should work on any operating system).
+- familiarity with WFF
+- familiarity with the process for building, installing and testing watchfaces using WFF (_eg_, [Google's instructions](https://developer.android.com/training/wearables/wff/setup) and [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat))
+- familiarity with Python
+- the use of Microsoft Windows (although the preprocessor should work on any operating system).
 
 #### Contents
 
-* [Features](#features)
-  * [`<Define>` Elements](#defines)
-  * [`<Symbol>` and `<Use>` Elements](#symbol)
-    * [Customising `<Use>` Instances with Top-level Attributes](#use_attrib)
-    * [`<Transform>`](#transform)
-    * [`<Delete>`](#delete)
-    * [`<Symbol>` Candidate Selection](#candidates)
-  * [XML Element `{Expression}`s](#expressions)
-  * [`<Import>` Elements](#import)
-    * [`<Import>` XML](#import_xml)
-    * [`<Import>` Python](#import_py)
-  * [Example](#full_example)
-* [Installation](#installation)
-* [Usage](#usage)
-  * [Prepare Input File](#prepare)
-  * [Run the Preprocessor](#run)
-  * [Build and Test Watchface](#build)
-  * [Debugging](#debugging)
-    * [`pp_log()`](#pp_log)
-* [Limitations](#limitations)
-* [Other Applications](#applications)
-  * [XSLT](#xslt)
+- [Features](#features)
+  - [`<Define>` Elements](#defines)
+  - [`<Symbol>` and `<Use>` Elements](#symbol)
+    - [Customising `<Use>` Instances with Top-level Attributes](#use_attrib)
+    - [`<Transform>`](#transform)
+    - [`<Delete>`](#delete)
+    - [`<Symbol>` Candidate Selection](#candidates)
+  - [XML Element `{Expression}`s](#expressions)
+  - [`<Import>` Elements](#import)
+    - [`<Import>` XML](#import_xml)
+    - [`<Import>` Python](#import_py)
+  - [Example](#full_example)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Prepare Input File](#prepare)
+  - [Run the Preprocessor](#run)
+  - [Build and Test Watchface](#build)
+  - [Debugging](#debugging)
+    - [`pp_log()`](#pp_log)
+- [Limitations](#limitations)
+- [Other Applications](#applications)
+  - [XSLT](#xslt)
 
 ## <a id="features"></a>FEATURES
 
@@ -68,31 +69,31 @@ All `<Define>` elements must be direct children of the `<Watchface>` element.
 Everything between the opening and closing tags (`<Define>` and `</Define>`) must be Python variable and function definitions.
 
 > [!WARNING]
-> If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, *Bad Things™* will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
+> If you define a variable or function with the same name as a preprocessor or built-in Python variable or function, _Bad Things™_ will probably happen. Global variables and functions used internally by the preprocessor have names that start with `xmlpp`; you should also avoid redefining [pp_log()](#pp_log).
 
 <a id="indentation"></a>Your Python code must comply with Python's indentation requirements. Within a `<Define>` element, you have these options:
 
-* A single short definition can be included immediately between `<Define>` and `</Define>` on a single line.
-* Left-align the first line of Python code, then maintain that indentation using Python conventions in subsequent lines.
-* Indent the first line of Python code as you see fit (*eg*, to the right of the `<Define>` tag as in the example above), then maintain that indentation using Python conventions in subsequent lines.
-* Blank lines are okay (regardless of indentation).
+- A single short definition can be included immediately between `<Define>` and `</Define>` on a single line.
+- Left-align the first line of Python code, then maintain that indentation using Python conventions in subsequent lines.
+- Indent the first line of Python code as you see fit (_eg_, to the right of the `<Define>` tag as in the example above), then maintain that indentation using Python conventions in subsequent lines.
+- Blank lines are okay (regardless of indentation).
 
-If you need to use functions that are defined in Python modules (*eg*, `math.sqrt()`), include the necessary `import` statement(s) in a `<Define>` element.
+If you need to use functions that are defined in Python modules (_eg_, `math.sqrt()`), include the necessary `import` statement(s) in a `<Define>` element.
 
 Comments can be included in `<Define>` code using normal Python conventions.
 
 You can have multiple definitions in a single `<Define>` element; you can also use multiple `<Define>` elements.
 
-The preprocessor executes *all* `<Define>` elements in the input file before it does anything else. Because of this:
+The preprocessor executes _all_ `<Define>` elements in the input file before it does anything else. Because of this:
 
-* It isn't useful to redefine variables or functions; only the final definitions will be retained. An unfortunate consequence of this is that you can't have `<Define>`d variables or functions local to a sub-branch within your XML tree.
-* It isn't possible to refer to values that are evaluated in [XML element `{expressions}`s](#expressions) (*eg*, `"{SELF.width}"`). Such values need to be passed to Python functions as parameters, as in the `centre()` example above.
+- It isn't useful to redefine variables or functions; only the final definitions will be retained. An unfortunate consequence of this is that you can't have `<Define>`d variables or functions local to a sub-branch within your XML tree.
+- It isn't possible to refer to values that are evaluated in [XML element `{expressions}`s](#expressions) (_eg_, `"{SELF.width}"`). Such values need to be passed to Python functions as parameters, as in the `centre()` example above.
 
 #### WFF Data Source Values
 
 [WFF data source values](https://developer.android.com/training/wearables/wff/common/attributes/source-type), which are equivalent to [Watch Face Studio tag values](https://developer.samsung.com/watch-face-studio/user-guide/tag-expression.html), aren't available until the watchface is running on a real watch or virtual device. Therefore, such values can't be used in `<Define>` elements because those are evaluated before the watchface is even built. However, there are a few ways to avoid repeating expressions involving data sources.
 
-A string variable can contain the names of data sources; *eg*:
+A string variable can contain the names of data sources; _eg_:
 
     myTagEquation = "[COMPLICATION.TITLE] != null &amp;&amp; [COMPLICATION.MONOCHROMATIC_IMAGE] == null"
 
@@ -104,11 +105,11 @@ This could then be used in an `{expression}` like this:
 
 This can be useful if such blocks of code need to be repeated (in which case, consider putting them in a [`<Symbol>`](#symbol)).
 
-You can write Python functions that take data source names as parameters and return a string representation of an equation; *eg*:
+You can write Python functions that take data source names as parameters and return a string representation of an equation; _eg_:
 
     MY_CONSTANT = 4
     def myFunc(tagString, y):
-	    return '({tagString})*{y}'.format(tagString=tagString, y=y)
+        return '({tagString})*{y}'.format(tagString=tagString, y=y)
 
 Such a function could be used in an `{expression}` like this:
 
@@ -118,7 +119,7 @@ After preprocessing, the resulting string would be:
 
     "5 + ([SECOND] + 2)*3"
 
-Note that embedding string literals (*eg*, `'[SECOND]'`) within attribute values may require cunning use of different types of quotation marks.
+Note that embedding string literals (_eg_, `'[SECOND]'`) within attribute values may require cunning use of different types of quotation marks.
 
 ---
 
@@ -157,7 +158,7 @@ All `<Symbol>` elements must be direct children of the `<Watchface>` element.
 
 `<Use>` elements can be placed wherever the contents of the corresponding `<Symbol>` would be valid.
 
-The `<Symbol>` element itself is not written to the output `watchface.xml` file. Only copies of the *contents* of the `<Symbol>`, as specified by `<Use>` elements, are written.
+The `<Symbol>` element itself is not written to the output `watchface.xml` file. Only copies of the _contents_ of the `<Symbol>`, as specified by `<Use>` elements, are written.
 
 A `<Symbol>` can contain more than one immediate child element. All such children (and their sub-elements) will be inserted when `<Use>`d.
 
@@ -167,18 +168,17 @@ A `<Symbol>` can't contain other `<Symbol>` elements (but see above). All `<Symb
 
 `<Symbol>`s can include [`{expressions}`s](#expressions) which can, in turn, include variables and functions defined in [`<Define>`](#defines) elements. The example above contains several of these (although the `<Define>` element is not shown).
 
-`<Symbol>` and `<Use>` can reduce the size of, and duplication in, your source file, but they won't do so for your `watchface.xml` file (which is used on the watch). This is because the preprocessor applies `<Symbol>` and `<Use>` elements *before* the watchface build process happens. It has to be this way because WFF does not support `<Symbol>` and `<Use>`.
+`<Symbol>` and `<Use>` can reduce the size of, and duplication in, your source file, but they won't do so for your `watchface.xml` file (which is used on the watch). This is because the preprocessor applies `<Symbol>` and `<Use>` elements _before_ the watchface build process happens. It has to be this way because WFF does not support `<Symbol>` and `<Use>`.
 
 #### <a id="use_attrib"></a>Customising `<Use>` Instances with Top-level Attributes
 
-`<Symbol>` and `<Use>` allow you to reuse similar elements without copying and pasting. However, you will often want to make minor adjustments to each instance; *eg*, specifying different `x` and `y` values. There are a few ways to achieve this.
+`<Symbol>` and `<Use>` allow you to reuse similar elements without copying and pasting. However, you will often want to make minor adjustments to each instance; _eg_, specifying different `x` and `y` values. There are a few ways to achieve this.
 
-If you specify attribute values in a `<Use>` element, those values (except for that of `href`) will be applied to *all* of the top-level elements in the `<Symbol>` when it is inserted. The example above uses this feature: the second `<Use>` element overrides the value of the `<Symbol>`'s `x` attribute, so the second circle will have a different x value to that of the first circle.
+If you specify attribute values in a `<Use>` element, those values (except for that of `href`) will be applied to _all_ of the top-level elements in the `<Symbol>` when it is inserted. The example above uses this feature: the second `<Use>` element overrides the value of the `<Symbol>`'s `x` attribute, so the second circle will have a different x value to that of the first circle.
 
-Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
+Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
 
-> [!WARNING]
-> [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
+> [!WARNING] > [`{expression}`s](#expressions) in attribute values are processed in the order in which the attributes appear in their element. Therefore, make sure you declare attributes with dependent values _after_ those on which they depend. WFF doesn't care about the order on which attributes are declared. Setting a bogus default value in a `<Symbol>` is okay if the actual value will be supplied by a `<Use>` element. Adding attributes via `<Use>` after the element has been declared will put the new attributes _after_ the predeclared attributes, so the new attribute's values won't be accessible by attributes declared earlier. So, this won't work:
 
         <Symbol id="icon">
             <PartImage
@@ -188,7 +188,7 @@ Attribute values specified in a `<Use>` element do not change the `<Symbol>`; th
         </Symbol>
         <Use href="icon" height="{MY_SIZE}" />
 
-> ...because `height` will be added to the `<PartImage>`'s attributes _after_ `width`, so `SELF.height` isn't known when processing the `width` `{expression}`. However, this *will* work:
+> ...because `height` will be added to the `<PartImage>`'s attributes _after_ `width`, so `SELF.height` isn't known when processing the `width` `{expression}`. However, this _will_ work:
 
         <Symbol id="icon">
             <PartImage
@@ -199,17 +199,17 @@ Attribute values specified in a `<Use>` element do not change the `<Symbol>`; th
         </Symbol>
         <Use href="icon" height="{MY_SIZE}" />
 
-Attributes with names that start with `data-` (*eg*, `data-gauge-diameter`) will be deleted at the end of preprocessing. This can be useful for attributes that will be used internally by the `<Use>` instance (*eg*, `{PARENT.data-gauge-diameter}`) but which are not valid in WFF.
+Attributes with names that start with `data-` (_eg_, `data-gauge-diameter`) will be deleted at the end of preprocessing. This can be useful for attributes that will be used internally by the `<Use>` instance (_eg_, `{PARENT.data-gauge-diameter}`) but which are not valid in WFF.
 
 > [!WARNING]
-> if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; *eg*, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; *eg*, `PARENT.data-gauge-diameter - 10`.
+> if you employ `data-` attributes in expressions, bear in mind that minus signs can be confused with hyphens in attribute names; _eg_, `PARENT.data-gauge-diameter-10`. If you intend to subtract, put a space before the minus sign; _eg_, `PARENT.data-gauge-diameter - 10`.
 
 > [!TIP]
 > Within `<Symbol>` definitions, you can initialise attribute values (including those in sub-elements) to default values. This way, you don't need to specify them when the `<Symbol>` is `<Use>`d and the defaults are appropriate. You only need to specify attribute values in `<Use>` when the values specified within the `<Symbol>` need to be changed.
 
 #### <a id="transform"></a>`<Transform>`
 
-A more flexible way to customise `<Symbol>` attribute values is to include one or more `<Transform>` elements within the relevant `<Use>`; *eg*: if your `<Symbol>` is:
+A more flexible way to customise `<Symbol>` attribute values is to include one or more `<Transform>` elements within the relevant `<Use>`; _eg_: if your `<Symbol>` is:
 
     <Symbol id="myArc">
         <PartDraw...
@@ -231,20 +231,19 @@ A more flexible way to customise `<Symbol>` attribute values is to include one o
 
 <a id="xpath"></a>The `href` attribute of the `<Transform>` element can accept any [`XPath`](https://docs.python.org/3/library/xml.etree.elementtree.html#xpath-support) expression supported by Python's [`eTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#) implementation; _eg_:
 
-* `"PartDraw"` matches all `<PartDraw>` elements that are direct children of the `<Symbol>`
+- `"PartDraw"` matches all `<PartDraw>` elements that are direct children of the `<Symbol>`
 
-* `"PartDraw/Arc"` matches all `<Arc>` elements that are direct children of `<PartDraw>` elements that are direct children of the `<Symbol>`
+- `"PartDraw/Arc"` matches all `<Arc>` elements that are direct children of `<PartDraw>` elements that are direct children of the `<Symbol>`
 
-* `"PartDraw[2]"` matches the second `<PartDraw>` element that is direct child of the `<Symbol>`
+- `"PartDraw[2]"` matches the second `<PartDraw>` element that is direct child of the `<Symbol>`
 
-* `".//Arc"` matches all `<Arc>` elements anywhere in the `<Symbol>`
+- `".//Arc"` matches all `<Arc>` elements anywhere in the `<Symbol>`
 
-* `".//*[@direction='CLOCKWISE']"` matches elements of any type that have an attribute named `direction` with a value of `CLOCKWISE`.
+- `".//*[@direction='CLOCKWISE']"` matches elements of any type that have an attribute named `direction` with a value of `CLOCKWISE`.
 
-> [!WARNING]
-> `<Transform>` elements will be applied to *all* elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
+> [!WARNING] > `<Transform>` elements will be applied to _all_ elements in the `<Symbol>` that match the `href` value, and not just the first match. Be sure that `href` selects only the element(s) that you want to change.
 
-Attribute value changes specified in a `<Use> <Transform>` element don't change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute value changes specified in prior `<Use> <Transform>`s.
+Attribute value changes specified in a `<Use> <Transform>` element don't change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute value changes specified in prior `<Use> <Transform>`s.
 
 The preprocessor's `<Transform>` element is not the same as WFF's `<Transform>` element. The preprocessor's `<Transform>` element can only appear within a `<Use>` element, takes effect when the preprocessor is executed (as opposed to when the watchface is running), and requires a `href` attribute.
 
@@ -254,10 +253,9 @@ You can usually achieve the same effect as `<Transform>` by [setting attribute v
 
 `<Delete>` is similar to `<Transform>`, except that it simply removes elements (including their children) from the `<Symbol>` that match its `href` attribute value. `href` can take [XPath expressions](#xpath).
 
-> [!WARNING]
-> `<Delete>` elements will be applied to *all* elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
+> [!WARNING] > `<Delete>` elements will be applied to _all_ elements in the `<Symbol>` that match their `href` values, and not just the first match. Be sure that `href` selects only the element(s) that you want to delete.
 
-Elements that are deleted by a `<Use> <Delete>` element do not change the `<Symbol>`; they're only applied to the *copy* of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will still contain elements that were deleted in prior `<Use> <Delete>`s.
+Elements that are deleted by a `<Use> <Delete>` element do not change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will still contain elements that were deleted in prior `<Use> <Delete>`s.
 
 Because you can delete elements from a `<Symbol>` when you `<Use>` it, but you can't add new elements, you should include all possibly-relevant elements in your `<Symbol>`s.
 
@@ -281,37 +279,37 @@ In some places, text enclosed in curly brackets `{ }` will be executed as a Pyth
 
 `{expression}`s will be executed and replaced in the following contexts:
 
-* XML attribute values (as in the example above)
+- XML attribute values (as in the example above)
 
-* XML element text (*eg*, WFF [`<Template>`](https://developer.android.com/training/wearables/wff/group/part/text/formatter/template) elements)
+- XML element text (_eg_, WFF [`<Template>`](https://developer.android.com/training/wearables/wff/group/part/text/formatter/template) elements)
 
-* XML element tail (rarely/never used in WFF).
+- XML element tail (rarely/never used in WFF).
 
-An attribute value string can contain normal text as well as an `{expression}`; *eg*:
+An attribute value string can contain normal text as well as an `{expression}`; _eg_:
 
     <Group name="complic{PARENT.slotId}" ...
 
-An attribute value string can contain more than one `{expression}`; *eg*:
+An attribute value string can contain more than one `{expression}`; _eg_:
 
     "foo {expression1} bar {expression2} baz"
 
 Everything between the opening and closing curly brackets must be a Python expression.
 
-`{expression}`s can use variables and functions that have been declared in [`<Define>`](#defines) elements, as well as any standard Python functions. If you need to use functions that are defined in Python modules (*eg*, `math.sqrt()`), include the necessary `import` statement(s) in a [`<Define>`](#defines) element.
+`{expression}`s can use variables and functions that have been declared in [`<Define>`](#defines) elements, as well as any standard Python functions. If you need to use functions that are defined in Python modules (_eg_, `math.sqrt()`), include the necessary `import` statement(s) in a [`<Define>`](#defines) element.
 
-Mathematical expressions in `<Define>` or `{expression}` can result in non-integer values, but some WFF attributes (*eg*, x) require integers. Use Python's `round()` function in such expressions.
+Mathematical expressions in `<Define>` or `{expression}` can result in non-integer values, but some WFF attributes (_eg_, x) require integers. Use Python's `round()` function in such expressions.
 
 <a id="self_parent"></a>Two special variables can be used within `{expression}`s:
 
-* `SELF` refers to the current element. This can be used to access attribute values that have been previously defined in the current element; *eg*, `width="{SELF.height * 2}"`.
+- `SELF` refers to the current element. This can be used to access attribute values that have been previously defined in the current element; _eg_, `width="{SELF.height * 2}"`.
 
-* `PARENT` refers to the parent of the current element. If the required attribute hasn't been defined on the parent element, `PARENT` will consider the parent's parent, and so on up the XML tree. `PARENT` can be used in two ways:
+- `PARENT` refers to the parent of the current element. If the required attribute hasn't been defined on the parent element, `PARENT` will consider the parent's parent, and so on up the XML tree. `PARENT` can be used in two ways:
 
-  * `PARENT.attributeName` returns the parent's value of the named attribute.
+  - `PARENT.attributeName` returns the parent's value of the named attribute.
 
-  * `PARENT` without an attribute name returns the parent's value of the attribute that is currently being defined; *eg*, `width="{PARENT}"` will set the current element's width to the same value as that of its parent.
+  - `PARENT` without an attribute name returns the parent's value of the attribute that is currently being defined; _eg_, `width="{PARENT}"` will set the current element's width to the same value as that of its parent.
 
-[WFF data source values](https://developer.android.com/training/wearables/wff/common/attributes/source-type), which are equivalent to [Watch Face Studio tag values](https://developer.samsung.com/watch-face-studio/user-guide/tag-expression.html), aren't available until the watchface is running on a real watch (or virtual device). Therefore, such values can't be used in preprocessor `{expression}`s because `{expression}`s are evaluated before the watchface is even built. However, it is possible to use data source *names* in `{expression}`s. For example, the XML code to display a `<PartImage>` for an `AMBIENT` (AOD) icon is almost identical to that for a non-AMBIENT icon. The only difference will often be that one `<PartImage>` will use a `[COMPLICATION.MONOCHROMATIC_IMAGE_AMBIENT]` whereas the other will use a `[COMPLICATION.MONOCHROMATIC_IMAGE]`. You can write a `<Symbol id="iconVariant">` to handle both cases. The code within the `<Symbol>` could specify `[COMPLICATION.MONOCHROMATIC_IMAGE]` so that `<Use href="iconVariant"/>` would display it. When the `AMBIENT` variant needs to be displayed instead, the `<Symbol>` could be `<Use>`d again but with the data source value changed; *eg*:
+[WFF data source values](https://developer.android.com/training/wearables/wff/common/attributes/source-type), which are equivalent to [Watch Face Studio tag values](https://developer.samsung.com/watch-face-studio/user-guide/tag-expression.html), aren't available until the watchface is running on a real watch (or virtual device). Therefore, such values can't be used in preprocessor `{expression}`s because `{expression}`s are evaluated before the watchface is even built. However, it is possible to use data source _names_ in `{expression}`s. For example, the XML code to display a `<PartImage>` for an `AMBIENT` (AOD) icon is almost identical to that for a non-AMBIENT icon. The only difference will often be that one `<PartImage>` will use a `[COMPLICATION.MONOCHROMATIC_IMAGE_AMBIENT]` whereas the other will use a `[COMPLICATION.MONOCHROMATIC_IMAGE]`. You can write a `<Symbol id="iconVariant">` to handle both cases. The code within the `<Symbol>` could specify `[COMPLICATION.MONOCHROMATIC_IMAGE]` so that `<Use href="iconVariant"/>` would display it. When the `AMBIENT` variant needs to be displayed instead, the `<Symbol>` could be `<Use>`d again but with the data source value changed; _eg_:
 
     <Use href="iconVariant">
         <Transform
@@ -330,14 +328,12 @@ Mathematical expressions in `<Define>` or `{expression}` can result in non-integ
 
 Notes:
 
-* All `<Import>` elements must be direct children of the root XML element.
-* An `<Import>`ed file can contain `<Import>` elements.
-* In addition to the filename, a path (directory/folder) can be included in `href`.
-* `href` paths are relative to the directory of the file containing the `<Import>` element.
+- All `<Import>` elements must be direct children of the root XML element.
+- An `<Import>`ed file can contain `<Import>` elements.
+- In addition to the filename, a path (directory/folder) can be included in `href`.
+- `href` paths are relative to the directory of the file containing the `<Import>` element.
 
-> [!WARNING]
-> `<Import>` doesn't provide namespacing, local scoping, *etc*. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; *eg*, `RECT_RANGED_COMPLIC_WIDTH`.
-
+> [!WARNING] > `<Import>` doesn't provide namespacing, local scoping, _etc_. All imported elements and code are global. Be careful using broad names such as `COMPLICATION_WIDTH` because such names would clash if used independently elsewhere. For maximum safety, consider prefixing names with a unique informal namespace; _eg_, `RECT_RANGED_COMPLIC_WIDTH`.
 
 #### <a id="import_xml"></a>`<Import>` XML
 
@@ -379,8 +375,8 @@ This will replace the `<Import`> element with a [`<Define>`](#defines) element t
 
 Importing Python from a `.py` file has these advantages:
 
-* common constants and functions can be reused
-* coding assistance can be obtained by editing `.py` files in a suitable IDE or code editor.
+- common constants and functions can be reused
+- coding assistance can be obtained by editing `.py` files in a suitable IDE or code editor.
 
 If the preprocessor's `<Import>` element is inadequate, you can use Python's native `import` capabilities within a `<Define>` element.
 
@@ -391,17 +387,30 @@ If the preprocessor's `<Import>` element is inadequate, you can use Python's nat
 A complete example of a preprocessor input file is [here](example/watchface/watchface-pp.xml). It imports [ranged-complic.xml](example/watchface/widgets/ranged-complic/ranged-complic.xml) and [defines.py](example/watchface/widgets/ranged-complic/defines.py). The corresponding `watchface.xml` produced by the preprocessor is [here](example/watchface/src/main/res/raw/watchface.xml).
 
 > [!NOTE]
-> * This example attempts to demonstrate all of the preprocessor's capabilities; it is not a sensible way to structure an actual project.
-> * The input files are larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
+>
+> - This example attempts to demonstrate all of the preprocessor's capabilities; it is not a sensible way to structure an actual project.
+> - The input files are larger than the output file. This is not normally the case because extensive `<Use>` elements reduce duplication. Moreover, the input file can be easier to develop and maintain because it avoids duplication and allows meaningfully-named variables and functions.
 
 ## <a id="installation"></a>INSTALLATION
 
-Install a relatively recent version of [Python](https://www.python.org/) (*eg*, 3.13+).
+### Install with [Clockwork](https://clockwork-pkg.pages.dev/)
+
+Clockwork is the easiest way to manage the dependencies of your Watch Face Format project. If you don't have it yet, learn how to install Clockwork at [clockwork-pkg.pages.dev](https://clockwork-pkg.pages.dev/install).
+
+```shell
+clockwork add xml-preprocessor
+```
+
+Clockwork will automatically try to install a compatible version of python when [building with Clockwork](https://clockwork-pkg.pages.dev/guides/creating) if it can't find it.
+
+### Manual Installation
+
+Install a relatively recent version of [Python](https://www.python.org/) (_eg_, 3.13+).
 
 Put `preprocess.py` somewhere where you can conveniently access it from your watchface project. For example, if you use the same file structure as Google's [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat), you could put `preprocess.py` in the same folder as `gradlew`.
 
 > [!IMPORTANT]
-> If your project already contains a `watchface\src\main\res\raw\watchface.xml` file (and it probably does), ***COPY THIS FILE TO SOMEWHERE SAFE*** because you will probably use the preprocessor to overwrite it.
+> If your project already contains a `watchface\src\main\res\raw\watchface.xml` file (and it probably does), **_COPY THIS FILE TO SOMEWHERE SAFE_** because you will probably use the preprocessor to overwrite it.
 
 ## <a id="usage"></a>USAGE
 
@@ -414,24 +423,24 @@ Obtain, create or edit an XML file (suggested name: `watchface-pp.xml`) that con
 
 > [!TIP]
 > Some lazy ways to obtain an initial file are:
->  * [Google's samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)
->  * `watchface.xml` extracted from a [Samsung Watch Face Studio (WFS)](https://developer.samsung.com/watch-face-studio/overview.html) project:
->    * 'Publish' the project in WFS.
->    * Find the resulting `.aab` file in `build\[project]`.
->    * Append `.zip` to the `.aab` file's name.
->    * Copy `base\res\raw\watchface.xml` from within the `.aab.zip` file.
->    * Restore the `.aab` file's name by removing the `.zip`.
->  * [Empty WFF boilerplate project](https://github.com/gondwanasoft/wff-boilerplate).
+>
+> - [Google's samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)
+> - `watchface.xml` extracted from a [Samsung Watch Face Studio (WFS)](https://developer.samsung.com/watch-face-studio/overview.html) project:
+>   - 'Publish' the project in WFS.
+>   - Find the resulting `.aab` file in `build\[project]`.
+>   - Append `.zip` to the `.aab` file's name.
+>   - Copy `base\res\raw\watchface.xml` from within the `.aab.zip` file.
+>   - Restore the `.aab` file's name by removing the `.zip`.
+> - [Empty WFF boilerplate project](https://github.com/gondwanasoft/wff-boilerplate).
 
 > [!TIP]
-> To avoid confusion, name your preprocessor input file something other than `watchface.xml`; *eg*, `watchface-pp.xml`.
+> To avoid confusion, name your preprocessor input file something other than `watchface.xml`; _eg_, `watchface-pp.xml`.
 
-> [!TIP]
-> [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; *eg*: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
+> [!TIP] > [WFS](https://developer.samsung.com/watch-face-studio/overview.html) sometimes uses XML `CDATA` strings in `watchface.xml` files it creates. The XML parser used by the preprocessor converts `CDATA` strings into escaped XML; _eg_: `"<![CDATA[...&&...]]>"` becomes `"...&amp;&amp;..."`. The watchface build process is happy with this. You may find the need to use escaped XML characters in other situations, such as `&gt;` in place of `>` in element text.
 
 ### <a id="run"></a>Run the Preprocessor
 
-From a command prompt, execute `preprocess.py`, passing the input filename and output filename as parameters; *eg*:
+From a command prompt, execute `preprocess.py`, passing the input filename and output filename as parameters; _eg_:
 
     preprocess.py watchface\watchface-pp.xml watchface\src\main\res\raw\watchface.xml
 
@@ -449,7 +458,7 @@ If there were no errors, the output file will have been created. If you like, yo
 
 ### <a id="build"></a>Build and Test Watchface
 
-Use the output file (typically `watchface.xml`) to build and test the watchface as you normally would (*eg*, see [Google's instructions](https://developer.android.com/training/wearables/wff/setup) and [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)).
+Use the output file (typically `watchface.xml`) to build and test the watchface as you normally would (_eg_, see [Google's instructions](https://developer.android.com/training/wearables/wff/setup) and [samples](https://github.com/android/wear-os-samples/tree/main/WatchFaceFormat)).
 
 ### <a id="debugging"></a>Debugging
 
@@ -467,7 +476,7 @@ Even if the preprocessor completes successfully, it's eminently possible for the
 > <a id="validator"></a>
 
 > [!NOTE]
-> If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (*etc*) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (*eg*, `watchface-pp.xml`).
+> If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (_etc_) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (_eg_, `watchface-pp.xml`).
 
 > [!TIP]
 > Many WFF elements can be given a `name` attribute. Using unique values for `name`s can help you to match elements between your `watchface-pp.xml` and `watchface.xml` files. This can be especially useful since comments in the input file are not included in the output file. Be aware that, if you employ `<Use>` more than once for a particular `<Symbol>`, elements within the `<Symbol>` will be repeated in `watchface.xml` so `name` attributes will no longer be unique.
@@ -478,8 +487,8 @@ The preprocessor provides a `pp_log()` function that can be called within `watch
 
     pp_log(expression[, prompt])
 
-* `expression`: Python code for the value that you want to display.
-* `prompt`: an optional prompt to print before the value of the expression.
+- `expression`: Python code for the value that you want to display.
+- `prompt`: an optional prompt to print before the value of the expression.
 
 You can use `pp_log()` in a `<Define>` element like this:
 
@@ -531,11 +540,11 @@ XML comments in the input file are not included in the output file.
 
 Although `preprocessor.py` was written specifically to help with WFF XML, the approach is fairly general. As a result, it should work in many other situations in which XML file generation can benefit from its features. Possible issues include:
 
-* XML element tags used by the preprocessor (`<Define>`, *etc*) may clash with the semantics of the XML schema being used.
-* The use of curly brackets `{ }` to embed expressions may clash with other uses of such brackets.
-* The output file will be reformatted.
-* XML `<!--comments-->` will not appear in the output file.
-* `CDATA` strings and escape characters (`&amp;`, *etc*) may be changed.
+- XML element tags used by the preprocessor (`<Define>`, _etc_) may clash with the semantics of the XML schema being used.
+- The use of curly brackets `{ }` to embed expressions may clash with other uses of such brackets.
+- The output file will be reformatted.
+- XML `<!--comments-->` will not appear in the output file.
+- `CDATA` strings and escape characters (`&amp;`, _etc_) may be changed.
 
 ### <a id="xslt"></a>XSLT
 
