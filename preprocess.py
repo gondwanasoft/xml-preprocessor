@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import xml.etree.ElementTree as xmlpp_ET
+from xml.sax.saxutils import unescape
 
 class xmlpp_error(Exception):   # custom Exception class
     def __init__(self, message):
@@ -17,6 +18,19 @@ class xmlpp_error(Exception):   # custom Exception class
 xmlpp_DEBUG = False
 xmlpp_source_file = xmlpp_dest_file = None
 xmlpp_symbols = {}  # associative array (disctionary) of <Symbol> elements, indexed by [id]
+
+def xmlpp_insert(xmlpp_dest, xmlpp_index, xmlpp_source, xmlpp_children_only=False):
+    """ Insert source into dest at index. If source.tag=="Dummy" or xmlpp_children_only, insert children only.
+        Returns index of element after insertion(s). """
+    if xmlpp_children_only or xmlpp_source.tag == "Dummy":
+        for xmlpp_child_el in xmlpp_source:    # insert <Widget> children
+            #print("inserting "+xmlpp_child_el.tag)
+            xmlpp_dest.insert(xmlpp_index, xmlpp_child_el)
+            xmlpp_index += 1
+    else:
+        xmlpp_dest.insert(xmlpp_index, xmlpp_source)
+        xmlpp_index += 1
+    return xmlpp_index
 
 def xmlpp_parse_args():     # parse command-line arguments
     xmlpp_OVERWRITE = False
@@ -30,7 +44,7 @@ def xmlpp_parse_args():     # parse command-line arguments
         else: xmlpp_source_file = xmlpp_arg
 
     if xmlpp_source_file is None or xmlpp_dest_file is None or xmlpp_USAGE_ERROR:
-        print("XML Preprocessor 1.2.0")
+        print("XML Preprocessor 1.3.0")
         print("Usage: preprocess.py sourceFile destinationFile [-d] [-y]")
         print("   -d prints debugging info")
         print("   -y overwrites destinationFile")
@@ -67,9 +81,7 @@ def xmlpp_load_tree(xmlpp_source, xmlpp_require_widget=False):
                 else:   # assume .xml
                     xmlpp_child_tree = xmlpp_load_tree(xmlpp_include_path, True)
                     xmlpp_child_root = xmlpp_child_tree.getroot()
-                    for xmlpp_el in xmlpp_child_root:
-                        xmlpp_element.insert(xmlpp_index, xmlpp_el)
-                        xmlpp_index += 1   # skip over inserted elements coz they've already been recursed in case of nested <Import>s
+                    xmlpp_index = xmlpp_insert(xmlpp_element, xmlpp_index, xmlpp_child_root)
             else:
                 # Recursively process imports in child elements
                 xmlpp_process_imports(xmlpp_child_el, xmlpp_source)
@@ -83,13 +95,18 @@ def xmlpp_load_tree(xmlpp_source, xmlpp_require_widget=False):
         raise xmlpp_error(f"{type(e).__name__} in \"{xmlpp_source}\": {sys.exception()}")
 
     xmlpp_root = xmlpp_tree.getroot()
-    if xmlpp_require_widget and xmlpp_root.tag != "Widget":
-        raise xmlpp_error(f"Root element of imported file \"{xmlpp_source}\" isn't <Widget>.")
 
     # Process imports throughout the entire tree
     xmlpp_process_imports(xmlpp_root, xmlpp_source)
 
+    #xmlpp_dump_el(xmlpp_root,"root")
     return xmlpp_tree
+
+
+
+
+
+
 
 def xmlpp_exec_all_definitions():   # execute all <Define> elements and delete them
     if xmlpp_DEBUG: print("\nExecuting <Define>s...")
@@ -127,7 +144,7 @@ def xmlpp_exec_all_definitions():   # execute all <Define> elements and delete t
         # print("tag="+el.tag)
         if (xmlpp_el.text):
             xmlpp_exec_definitions(xmlpp_el.text)
-        if (xmlpp_el.tail):
+        if (xmlpp_el.tail): # TODO 3.9 is this sensible?
             xmlpp_exec_definitions(xmlpp_el.tail)
         #xmlpp_root.remove(el) # delete <Define> element
         xmlpp_define_els.append(xmlpp_el)
@@ -163,7 +180,7 @@ def xmlpp_extract_symbols():    # extract all <Symbol> elements and delete them
         xmlpp_symbol_els.append(xmlpp_symbol_el)    # to delete from root
 
     for xmlpp_el in xmlpp_symbol_els:
-        xmlpp_root.remove(xmlpp_el)
+        xmlpp_root.remove(xmlpp_el) # TODO 0 can crash (T&T). Maybe trying to delete symbols that aren't part of watchface-pp.xml but were imported so aren't direct children of root. lxml?
 
 def xmlpp_replace_all_uses(): # replace all <Use> elements
     if (xmlpp_DEBUG): print("\nReplacing <Use>s with <Symbol>s...")
@@ -232,10 +249,7 @@ def xmlpp_replace_all_uses(): # replace all <Use> elements
                             if xmlpp_DEBUG: print("         Transformed an element")
 
                 # Insert copy of <Symbol>, potentially modified by <Transform>s, into tree:
-                for xmlpp_symbol_el in xmlpp_symbol_copy:
-                    #print("inserting "+xmlpp_symbol_el.tag)
-                    xmlpp_el.insert(xmlpp_index, xmlpp_symbol_el)
-                    xmlpp_index += 1   # skip over inserted elements coz they've already been recursed in case of nested <Use>s
+                xmlpp_index = xmlpp_insert(xmlpp_el, xmlpp_index, xmlpp_symbol_copy, True)
             else:   # Not <Use>
                 xmlpp_replace_use(xmlpp_child_el)   # recurse
                 xmlpp_index += 1
@@ -245,8 +259,18 @@ def xmlpp_replace_all_uses(): # replace all <Use> elements
 def xmlpp_replace_all_expressions(): # replace all {expression}s with their results
     if (xmlpp_DEBUG): print("\nEvaluating attribute {expression}s...")
 
+    class xmlpp_Parent_map:
+        def refresh(self):
+            self.xmlpp_parent_map = {c: p for p in xmlpp_root.iter() for c in p} # https://stackoverflow.com/questions/2170610/access-elementtree-node-parent-node
+        def find(self, xmlpp_el):
+            if xmlpp_el not in self.xmlpp_parent_map: return None
+            return self.xmlpp_parent_map[xmlpp_el]
+
+    xmlpp_parent_map = xmlpp_Parent_map()
+
     def xmlpp_evalStringWithExpressions(xmlpp_el, xmlpp_s, xmlpp_attrib_name=None):
-        # Returns string with expressions replaced by values; False if no expressions found.
+        # If the string is an expression that returns an XML Element, the Element is returned.
+        # Otherwise, returns string with expressions replaced by values, or False if no expressions found.
 
         def xmlpp_eval_parent(xmlpp_el, xmlpp_exp, xmlpp_attrib_name):
             # Returns arg with PARENT.attrib replaced by value of attrib in parent element.
@@ -256,9 +280,8 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
                 def xmlpp_eval_parent_attrib(xmlpp_el, xmlpp_parent_attrib):
                     # Recurses; returns None if no ancestor has a value for xmlpp_parent_attrib.
                     if xmlpp_DEBUG: print(f'      Looking for <{xmlpp_el.tag} {xmlpp_parent_attrib}="...">')
-                    if xmlpp_el not in xmlpp_parent_map:
-                        return None
-                    xmlpp_parent_el = xmlpp_parent_map[xmlpp_el]
+                    xmlpp_parent_el = xmlpp_parent_map.find(xmlpp_el)
+                    if xmlpp_parent_el is None: return None
                     xmlpp_parent_value = xmlpp_parent_el.get(xmlpp_parent_attrib)
                     if xmlpp_parent_value != None:
                         return xmlpp_parent_value
@@ -301,8 +324,8 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
 
             return xmlpp_exp
 
-        xmlpp_parent_map = {c: p for p in xmlpp_root.iter() for c in p} # https://stackoverflow.com/questions/2170610/access-elementtree-node-parent-node
-        xmlpp_matches = re.split(r'(\{.*?\})', xmlpp_s)
+        xmlpp_parent_map.refresh()
+        xmlpp_matches = re.split(r'(\{.*?\})', xmlpp_s)     # TODO 3.9 doesn't work if {} has \n
         if (len(xmlpp_matches) <= 1):
             return False    # no {}
         if (xmlpp_DEBUG): print(f'   Evaluating: <{xmlpp_el.tag} {xmlpp_attrib_name}="{xmlpp_s}">')
@@ -314,6 +337,10 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
                 xmlpp_result = eval(xmlpp_exp)
             except Exception as e:
                 raise xmlpp_error(f"{type(e).__name__} evaluating {{{xmlpp_exp}}}: {sys.exception()}")
+            if type(xmlpp_result) == type(xmlpp_root):  # string evaluates to an XML Element
+                if len(xmlpp_matches) != 3: raise xmlpp_error(f"evaluating \"{xmlpp_s}\": more than one {{expression}} in string when first {{expression}} returns XML.")
+                if xmlpp_matches[0] != "" or xmlpp_matches[2] != "": raise xmlpp_error(f"evaluating \"{xmlpp_s}\": an {{expression}} that returns XML must be the only content in the string.")
+                return xmlpp_result
             if '{' in str(xmlpp_result): raise xmlpp_error(f"evaluated expression {xmlpp_exp} seems to contain another expression")
             #print(exp,str(result))
             xmlpp_matches[xmlpp_matchIndex] = str(xmlpp_result)
@@ -322,23 +349,37 @@ def xmlpp_replace_all_expressions(): # replace all {expression}s with their resu
         return xmlpp_matches
 
     for xmlpp_el in xmlpp_root.iter():
+        # Do element's text:
         # print("tag="+el.tag)
         if (xmlpp_el.text):
             xmlpp_text = xmlpp_el.text.strip()
             if (xmlpp_text):
                 # print("   tag with text: "+xmlpp_el.tag)
                 xmlpp_processedText = xmlpp_evalStringWithExpressions(xmlpp_el, xmlpp_text)
-                if xmlpp_processedText:
+                if xmlpp_processedText is not False:
                     #print("\txmlpp_processedText=\""+xmlpp_processedText+"\"")
-                    xmlpp_el.text = xmlpp_processedText
+                    if isinstance(xmlpp_processedText, str):
+                        xmlpp_el.text = xmlpp_processedText
+                    else:
+                        xmlpp_el.text = ""
+                        xmlpp_insert(xmlpp_el, 0, xmlpp_processedText)
+        # Do element's tail:
         if (xmlpp_el.tail):
             xmlpp_tail = xmlpp_el.tail.strip()
             if (xmlpp_tail):
-                # print("   tag with tail: "+xmlpp_el.tag)
-                xmlpp_processedText = xmlpp_evalStringWithExpressions(xmlpp_el, xmlpp_tail)
-                if xmlpp_processedText:
-                    #print("\txmlpp_processedText=\""+xmlpp_processedText+"\"")
-                    xmlpp_el.tail = xmlpp_processedText
+                #print("   tag with tail: "+xmlpp_el.tag)
+                xmlpp_processedText = xmlpp_evalStringWithExpressions(xmlpp_el, xmlpp_tail) # may be string, XML or False
+                if xmlpp_processedText is not False:
+                    if isinstance(xmlpp_processedText, str):
+                        #print("\txmlpp_processedText=\""+xmlpp_processedText+"\"")
+                        xmlpp_el.tail = xmlpp_processedText
+                    else:
+                        xmlpp_el.tail = ""
+                        xmlpp_parent_map.refresh()
+                        xmlpp_parent = xmlpp_parent_map.find(xmlpp_el)
+                        xmlpp_index = list(xmlpp_parent).index(xmlpp_el) + 1
+                        xmlpp_insert(xmlpp_parent, xmlpp_index, xmlpp_processedText)
+        # Do element's attributes:
         xmlpp_keys = xmlpp_el.keys()
         # print("   keys=",xmlpp_keys)
         for xmlpp_key in xmlpp_keys:
