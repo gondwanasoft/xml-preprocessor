@@ -44,7 +44,7 @@ def xmlpp_parse_args():     # parse command-line arguments
         else: xmlpp_source_file = xmlpp_arg
 
     if xmlpp_source_file is None or xmlpp_dest_file is None or xmlpp_USAGE_ERROR:
-        print("XML Preprocessor 1.3.0")
+        print("XML Preprocessor 1.3.1")
         print("Usage: preprocess.py sourceFile destinationFile [-d] [-y]")
         print("   -d prints debugging info")
         print("   -y overwrites destinationFile")
@@ -81,7 +81,7 @@ def xmlpp_load_tree(xmlpp_source, xmlpp_require_widget=False):
                 else:   # assume .xml
                     xmlpp_child_tree = xmlpp_load_tree(xmlpp_include_path, True)
                     xmlpp_child_root = xmlpp_child_tree.getroot()
-                    xmlpp_index = xmlpp_insert(xmlpp_element, xmlpp_index, xmlpp_child_root)
+                    xmlpp_insert(xmlpp_element, xmlpp_index, xmlpp_child_root)
             else:
                 # Recursively process imports in child elements
                 xmlpp_process_imports(xmlpp_child_el, xmlpp_source)
