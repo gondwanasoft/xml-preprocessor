@@ -25,6 +25,15 @@
         def centre(parent_size, self_size):
             pp_log(parent_size/2, "centre() parent_size halved:")
             return round((parent_size-self_size)/2)
+        def generateSquares(count, width, height):
+            # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
+            xIncrement = (width - height) / (count - 1)
+            # Because we want to return more than one top-level element, we must use Dummy root:
+            root = xmlpp_ET.Element("Dummy")
+            for i in range(count):
+                rect = xmlpp_ET.SubElement(root, "Rectangle", {"x":f"{i*xIncrement}", "y":"0", "width":"20", "height":"20"})
+                xmlpp_ET.SubElement(rect, "Fill", {"color":"#00FF00"})
+            return root
     </Define>
 
     <Import href="widgets/ranged-complic/ranged-complic.xml" />
@@ -108,6 +117,10 @@
     </Symbol>
 
     <Scene backgroundColor="#ff000000">
+        <PartDraw x="100" y="75" width="250" height="20">
+            {generateSquares(5, SELF.width, SELF.height)}
+        </PartDraw>
+
         <!-- Left complication: -->
         <Use href="shortTextComplic" />
 

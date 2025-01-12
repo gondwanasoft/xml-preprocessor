@@ -39,6 +39,7 @@ This documentation assumes:
   - [Debugging](#debugging)
     - [`pp_log()`](#pp_log)
 - [Limitations](#limitations)
+- [Breaking Changes](#breaking)
 - [Other Applications](#applications)
   - [XSLT](#xslt)
 
@@ -89,7 +90,7 @@ The preprocessor executes _all_ `<Define>` elements in the input file before it 
 - It isn't useful to redefine variables or functions; only the final definitions will be retained. An unfortunate consequence of this is that you can't have `<Define>`d variables or functions local to a sub-branch within your XML tree.
 - It isn't possible to refer to values that are evaluated in [XML element `{expressions}`s](#expressions) (_eg_, `"{SELF.width}"`). Such values need to be passed to Python functions as parameters, as in the `centre()` example above.
 
-#### WFF Data Source Values
+#### <a id="data-source-values"></a>WFF Data Source Values
 
 [WFF data source values](https://developer.android.com/training/wearables/wff/common/attributes/source-type), which are equivalent to [Watch Face Studio tag values](https://developer.samsung.com/watch-face-studio/user-guide/tag-expression.html), aren't available until the watchface is running on a real watch or virtual device. Therefore, such values can't be used in `<Define>` elements because those are evaluated before the watchface is even built. However, there are a few ways to avoid repeating expressions involving data sources.
 
@@ -120,6 +121,61 @@ After preprocessing, the resulting string would be:
     "5 + ([SECOND] + 2)*3"
 
 Note that embedding string literals (_eg_, `'[SECOND]'`) within attribute values may require cunning use of different types of quotation marks.
+
+#### <a id="returning-xml"></a>Returning XML
+
+Normally, functions within `<Define>` will return a string or string-compatible value that will be used within an XML attribute value. The `centre()` example (above) does this. However, if a function returns an [ElementTree.Element object](https://docs.python.org/3/library/xml.etree.elementtree.html#element-objects), that element and/or its children will be inserted into the watchface.xml element tree in place of the `{expression}` that called it. Here's an example:
+
+    <Define>
+        def generateSquares(count, width, height):
+            # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
+            xIncrement = (width - height) / (count - 1)
+            # Because we want to return more than one top-level element, we must use Dummy root:
+            root = xmlpp_ET.Element("Dummy")
+            for i in range(count):
+                rect = xmlpp_ET.SubElement(root, "Rectangle", {"x":f"{i*xIncrement}", "y":"0", "width":"20", "height":"20"})
+                xmlpp_ET.SubElement(rect, "Fill", {"color":"#00FF00"})
+            return root
+    <Define>
+    ...
+    <PartDraw x="100" y="75" width="250" height="20">
+        {generateSquares(5, SELF.width, SELF.height)}
+    </PartDraw>
+
+Usage:
+
+- You can use `xmlpp_ET` to access Python's `ElementTree` module.
+
+- The element returned by a Python function can be the root of a tree containing a hierarchy of sub-elements.
+
+- <a id="dummy"></a>If you want to insert multiple elements at the top level, wrap them in a `<Dummy>` root element (as in the example above). The `<Dummy>` element itself won't be inserted, but all of its sub-elements will be. However, if the tag of the root element is _not_ `Dummy`, the root (and its sub-elements) will be inserted.
+
+- XML elements can be inserted into an element's text (as above) or appended to its tail. The latter is achieved by putting the `{expression}` _after_ an element's closing tag, and has the effect of inserting the returned elements after the closing tag (_ie_, they will have the same parent).
+
+- The `{expression}` that calls the element generation function must be the only content in the element's text or tail.
+
+- XML elements can't be inserted into an attribute value, so don't call a function that returns an element from within an attribute value `{expression}`.
+
+- The most politically-correct way to create XML elements is probably to use `ElementTree` methods as above. However, if you're uncomfortable with that, you can construct your XML as a string and convert it to an Element object when done. If you do this, you'll need to escape characters such as `<` and `>`. This version of the above example generates the same XML:
+
+    def generateSquares(count, width, height):
+        # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
+        xIncrement = (width - height) / (count - 1)
+        # Because we want to return more than one top-level element, we must use Dummy root:
+        xmlString = "&lt;Dummy&gt;"
+        for i in range(count):
+            xmlString += f'&lt;Rectangle x="{i*xIncrement}" y="0" width="{height}" height="{height}"&gt;&lt;Fill color="#FF0000"/&gt;&lt;/Rectangle&gt;'
+        xmlString += "&lt;/Dummy&gt;"
+        return xmlpp_ET.fromstring(xmlString)
+
+> [!Note]
+> The ability to generate XML from Python is not as useful as it might initially seem. As with everything that the preprocessor does, it happens prior to the watchface being built; it does not happen when the watchface is running.
+
+> [!Caution]
+> The ability to generate XML structures in loops makes it easy to create large numbers of elements, such as tick marks around a watch face index. However, this can result in runtime inefficiency. In general, it will be more efficient to use a single image to display multiple static items.
+
+> [!Tip]
+> The Python error `junk after document element` can occur if you attempt to create an XML tree with more than one root. Consider whether you should have used [`<Dummy>`](#dummy).
 
 ---
 
@@ -298,7 +354,11 @@ An attribute value string can contain more than one `{expression}`; _eg_:
 
 Everything between the opening and closing curly brackets must be a Python expression.
 
+`{expression}`s can't contain line breaks (_ie_, the whole expression must be on one line).
+
 `{expression}`s can use variables and functions that have been declared in [`<Define>`](#defines) elements, as well as any standard Python functions. If you need to use functions that are defined in Python modules (_eg_, `math.sqrt()`), include the necessary `import` statement(s) in a [`<Define>`](#defines) element.
+
+If an `{expression}` calls a function that returns an XML element, that element and/or its sub-elements will be inserted in place of the `{expression}`. For details, see [here](#returning-xml).
 
 Mathematical expressions in `<Define>` or `{expression}` can result in non-integer values, but some WFF attributes (_eg_, x) require integers. Use Python's `round()` function in such expressions.
 
@@ -345,19 +405,21 @@ Usage:
 
     <Import href="filename.xml" />
 
-This will replace the `<Import`> element with the XML elements within the top-level `<Widget>` element contained in `filename.xml`. For example, if `my_component.xml` contained this:
+This will replace the `<Import`> element with XML elements contained in `filename.xml`.
 
-    <Widget>
+The XML in `filename.xml` must be valid, meaning that it can only have one root element. If you only want to import one element and its sub-elements, you don't need to do anything special. However, if you want to import more than one top-level element, make those elements children of a `<Dummy>` root element. The `<Dummy>` element itself won't be imported, but its sub-elements will be. For example, if `my_component.xml` contained this:
+
+    <Dummy>
         <PartDraw... />
         <PartText... />
-    </Widget>
+    </Dummy>
 
 ...then `<Import href="my_component.xml" />` would be replaced with this:
 
     <PartDraw... />
     <PartText... />
 
-`<Import>` can be employed to reuse [`<Symbol>`](#symbol)s across projects. In this case, the imported file will typically contain a [`<Symbol>`](#symbol) element within `<Widget>`. The imported `<Symbol>` can then be accessed by `<Use>` elements. It will normally be necessary to customise the imported `<Symbol>`. As with `<Symbol>`s contained in the input file, imported `<Symbol>`s can be customised using [top-level attributes](#use_attrib) (including `data-` attributes), [`<Transform>`](#transform) and [`<Delete>`](#delete). In addition, imported `<Symbol>`s can use variables and functions from [`<Define>`](#defines) elements declared in the context into which they are imported.
+`<Import>` can be employed to reuse [`<Symbol>`](#symbol)s across projects. In this case, the imported file will typically contain a [`<Symbol>`](#symbol) element. The imported `<Symbol>` can then be accessed by `<Use>` elements. It will normally be necessary to customise the imported `<Symbol>`. As with `<Symbol>`s contained in the input file, imported `<Symbol>`s can be customised using [top-level attributes](#use_attrib) (including `data-` attributes), [`<Transform>`](#transform) and [`<Delete>`](#delete). In addition, imported `<Symbol>`s can use variables and functions from [`<Define>`](#defines) elements declared in the context into which they are imported.
 
 #### <a id="import_py"></a>`<Import>` Python
 
@@ -540,6 +602,15 @@ IDEs and code editors are unlikely to provide coding assistance for Python code 
 The formatting of the XML file generated by the preprocessor can be ugly (see [tip](#ugly)).
 
 XML comments in the input file are not included in the output file.
+
+## <a id="breaking"></a>BREAKING CHANGES
+
+#### Version 1.3.0
+
+Prior to v1.3.0, [`<Import>`ed XML elements](#import_xml) always needed a `<Widget>` root element, which was discarded. From v1.3.0, the root element is only discarded if it is `<Dummy>`. If you only need to `<Import>` a single element (typically `<Symbol>`), you don't need to put it inside any other root element.
+
+This change was made for consistency with the use of [Python functions that return XML](returning-xml). Such functions won't always return widgets (components). Moreover, since most `<Import>` files will only contain a `<Symbol>`, the need to wrap it within another element to ensure a single root was redundant.
+
 
 ## <a id="applications"></a>OTHER APPLICATIONS
 

@@ -8,7 +8,7 @@
         COMPLIC_TEXT_SIZE
         COMPLIC_TEXT_WEIGHT
 -->
-<Widget>
+<Dummy>
     <Import href="defines.py" />
     <Symbol id="rangedValueComplic">
         <ComplicationSlot
@@ -71,4 +71,4 @@
             </Complication>
         </ComplicationSlot>
     </Symbol>
-</Widget>
+</Dummy>

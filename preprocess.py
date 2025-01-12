@@ -23,7 +23,7 @@ def xmlpp_insert(xmlpp_dest, xmlpp_index, xmlpp_source, xmlpp_children_only=Fals
     """ Insert source into dest at index. If source.tag=="Dummy" or xmlpp_children_only, insert children only.
         Returns index of element after insertion(s). """
     if xmlpp_children_only or xmlpp_source.tag == "Dummy":
-        for xmlpp_child_el in xmlpp_source:    # insert <Widget> children
+        for xmlpp_child_el in xmlpp_source:    # insert children
             #print("inserting "+xmlpp_child_el.tag)
             xmlpp_dest.insert(xmlpp_index, xmlpp_child_el)
             xmlpp_index += 1
