@@ -44,7 +44,7 @@ def xmlpp_parse_args():     # parse command-line arguments
         else: xmlpp_source_file = xmlpp_arg
 
     if xmlpp_source_file is None or xmlpp_dest_file is None or xmlpp_USAGE_ERROR:
-        print("XML Preprocessor 1.3.1")
+        print("XML Preprocessor 1.3.2")
         print("Usage: preprocess.py sourceFile destinationFile [-d] [-y]")
         print("   -d prints debugging info")
         print("   -y overwrites destinationFile")
@@ -57,56 +57,55 @@ def xmlpp_parse_args():     # parse command-line arguments
         xmlpp_overwrite_input = input("Destination file already exists; overwrite it (y/n)? ")
         if (xmlpp_overwrite_input != "y"): exit(2)
 
-def xmlpp_load_tree(xmlpp_source, xmlpp_require_widget=False):
-    # Read source, and recursively splice in <Import> files.
-    # Returns tree.
+def xmlpp_load_source(xmlpp_source):
+    # Read source and return tree.
 
-    def xmlpp_process_imports(xmlpp_element, xmlpp_source):
-        """Process all Import elements under the given element."""
-        xmlpp_index = 0
-        while xmlpp_index < len(xmlpp_element):
-            xmlpp_child_el = xmlpp_element[xmlpp_index]
-            if xmlpp_child_el.tag == "Import":
-                xmlpp_href = xmlpp_child_el.get('href')
-                if xmlpp_DEBUG: print(f"      Found <Import href=\"{xmlpp_href}\" />")
-                xmlpp_include_path = os.path.join(os.path.dirname(xmlpp_source), xmlpp_href)    # assume href is relative to source
-                if not os.path.exists(xmlpp_include_path):
-                    raise xmlpp_error(f"Can't find \"{xmlpp_href}\" imported by \"{xmlpp_source}\".")
-                xmlpp_element.remove(xmlpp_child_el)    # remove <Import>
-                if xmlpp_href.lower().endswith('.py'):
-                    xmlpp_el = xmlpp_ET.Element('Define')
-                    with open(xmlpp_include_path, 'r') as xmlpp_file:
-                        xmlpp_el.text = f"\n{xmlpp_file.read()}\n"  # \n so as not to interfere with python indentation
-                    xmlpp_element.insert(xmlpp_index, xmlpp_el)
-                else:   # assume .xml
-                    xmlpp_child_tree = xmlpp_load_tree(xmlpp_include_path, True)
-                    xmlpp_child_root = xmlpp_child_tree.getroot()
-                    xmlpp_insert(xmlpp_element, xmlpp_index, xmlpp_child_root)
-            else:
-                # Recursively process imports in child elements
-                xmlpp_process_imports(xmlpp_child_el, xmlpp_source)
-            xmlpp_index += 1
+    def xmlpp_load_tree(xmlpp_source):
+        # Read source, and recursively splice in <Import> files.
+        # Returns tree.
 
-    if xmlpp_DEBUG and not xmlpp_require_widget: print(f"Loading source file(s)...")
-    if xmlpp_DEBUG: print(f"   Loading \"{xmlpp_source}\"")
-    try:
-        xmlpp_tree = xmlpp_ET.parse(xmlpp_source)
-    except Exception as e:
-        raise xmlpp_error(f"{type(e).__name__} in \"{xmlpp_source}\": {sys.exception()}")
+        def xmlpp_process_imports(xmlpp_element, xmlpp_source):
+            """Process all Import elements under the given element."""
+            xmlpp_index = 0
+            while xmlpp_index < len(xmlpp_element):
+                xmlpp_child_el = xmlpp_element[xmlpp_index]
+                if xmlpp_child_el.tag == "Import":
+                    xmlpp_href = xmlpp_child_el.get('href')
+                    if xmlpp_DEBUG: print(f"      Found <Import href=\"{xmlpp_href}\" />")
+                    xmlpp_include_path = os.path.join(os.path.dirname(xmlpp_source), xmlpp_href)    # assume href is relative to source
+                    if not os.path.exists(xmlpp_include_path):
+                        raise xmlpp_error(f"Can't find \"{xmlpp_href}\" imported by \"{xmlpp_source}\".")
+                    xmlpp_element.remove(xmlpp_child_el)    # remove <Import>
+                    if xmlpp_href.lower().endswith('.py'):
+                        xmlpp_el = xmlpp_ET.Element('Define')
+                        with open(xmlpp_include_path, 'r') as xmlpp_file:
+                            xmlpp_el.text = f"\n{xmlpp_file.read()}\n"  # \n so as not to interfere with python indentation
+                        xmlpp_element.insert(xmlpp_index, xmlpp_el)
+                    else:   # assume .xml
+                        xmlpp_child_tree = xmlpp_load_tree(xmlpp_include_path)
+                        xmlpp_child_root = xmlpp_child_tree.getroot()
+                        xmlpp_insert(xmlpp_element, xmlpp_index, xmlpp_child_root)
+                else:
+                    # Recursively process imports in child elements
+                    xmlpp_process_imports(xmlpp_child_el, xmlpp_source)
+                xmlpp_index += 1
 
-    xmlpp_root = xmlpp_tree.getroot()
+        if xmlpp_DEBUG: print(f"   Loading \"{xmlpp_source}\"")
+        try:
+            xmlpp_tree = xmlpp_ET.parse(xmlpp_source)
+        except Exception as e:
+            raise xmlpp_error(f"{type(e).__name__} in \"{xmlpp_source}\": {sys.exception()}")
 
-    # Process imports throughout the entire tree
-    xmlpp_process_imports(xmlpp_root, xmlpp_source)
+        xmlpp_root = xmlpp_tree.getroot()
 
-    #xmlpp_dump_el(xmlpp_root,"root")
-    return xmlpp_tree
+        # Process imports throughout the entire tree
+        xmlpp_process_imports(xmlpp_root, xmlpp_source)
 
+        #xmlpp_dump_el(xmlpp_root,"root")
+        return xmlpp_tree
 
-
-
-
-
+    if xmlpp_DEBUG: print(f"Loading source file(s)...")
+    return xmlpp_load_tree(xmlpp_source)
 
 def xmlpp_exec_all_definitions():   # execute all <Define> elements and delete them
     if xmlpp_DEBUG: print("\nExecuting <Define>s...")
@@ -409,7 +408,7 @@ def pp_log(xmlpp_arg, xmlpp_prompt="pp_log arg:"):
     return xmlpp_arg
 
 xmlpp_parse_args()
-xmlpp_tree = xmlpp_load_tree(xmlpp_source_file)
+xmlpp_tree = xmlpp_load_source(xmlpp_source_file)
 xmlpp_root = xmlpp_tree.getroot()
 xmlpp_exec_all_definitions()
 xmlpp_extract_symbols()
