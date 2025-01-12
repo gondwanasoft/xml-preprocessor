@@ -21,6 +21,8 @@ This documentation assumes:
 
 - [Features](#features)
   - [`<Define>` Elements](#defines)
+    - [`WFF Data Source Values`](#data-source-values)
+    - [`Returning XML`](#returning-xml)
   - [`<Symbol>` and `<Use>` Elements](#symbol)
     - [Customising `<Use>` Instances with Top-level Attributes](#use_attrib)
     - [`<Transform>`](#transform)
@@ -142,6 +144,19 @@ Normally, functions within `<Define>` will return a string or string-compatible 
         {generateSquares(5, SELF.width, SELF.height)}
     </PartDraw>
 
+> [!Note]
+> The most politically-correct way to create XML elements is probably to use `ElementTree` methods as above. However, if you're uncomfortable with that, you can construct your XML as a string and convert it to an Element object when done. If you do this, you'll need to escape characters such as `<` and `>`. This version of the above example generates the same XML:
+
+    def generateSquares(count, width, height):
+        # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
+        xIncrement = (width - height) / (count - 1)
+        # Because we want to return more than one top-level element, we must use Dummy root:
+        xmlString = "&lt;Dummy&gt;"
+        for i in range(count):
+            xmlString += f'&lt;Rectangle x="{i*xIncrement}" y="0" width="{height}" height="{height}"&gt;&lt;Fill color="#FF0000"/&gt;&lt;/Rectangle&gt;'
+        xmlString += "&lt;/Dummy&gt;"
+        return xmlpp_ET.fromstring(xmlString)
+
 Usage:
 
 - You can use `xmlpp_ET` to access Python's `ElementTree` module.
@@ -155,18 +170,6 @@ Usage:
 - The `{expression}` that calls the element generation function must be the only content in the element's text or tail.
 
 - XML elements can't be inserted into an attribute value, so don't call a function that returns an element from within an attribute value `{expression}`.
-
-- The most politically-correct way to create XML elements is probably to use `ElementTree` methods as above. However, if you're uncomfortable with that, you can construct your XML as a string and convert it to an Element object when done. If you do this, you'll need to escape characters such as `<` and `>`. This version of the above example generates the same XML:
-
-    def generateSquares(count, width, height):
-        # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
-        xIncrement = (width - height) / (count - 1)
-        # Because we want to return more than one top-level element, we must use Dummy root:
-        xmlString = "&lt;Dummy&gt;"
-        for i in range(count):
-            xmlString += f'&lt;Rectangle x="{i*xIncrement}" y="0" width="{height}" height="{height}"&gt;&lt;Fill color="#FF0000"/&gt;&lt;/Rectangle&gt;'
-        xmlString += "&lt;/Dummy&gt;"
-        return xmlpp_ET.fromstring(xmlString)
 
 > [!Note]
 > The ability to generate XML from Python is not as useful as it might initially seem. As with everything that the preprocessor does, it happens prior to the watchface being built; it does not happen when the watchface is running.
