@@ -1,3 +1,4 @@
 name: xml-preprocessor
 version: 1.2.0
 description: Allows Python expressions and reduces duplication in Google-Samsung Watch Face Format XML.
+watchFaceFormatVersion: *

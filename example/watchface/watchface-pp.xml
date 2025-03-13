@@ -31,7 +31,11 @@
             # Because we want to return more than one top-level element, we must use Dummy root:
             root = xmlpp_ET.Element("Dummy")
             for i in range(count):
-                rect = xmlpp_ET.SubElement(root, "Rectangle", {"x":f"{i*xIncrement}", "y":"0", "width":"20", "height":"20"})
+                rect = xmlpp_ET.SubElement(
+                    root,
+                    "Rectangle",
+                    {"x":f"{i*xIncrement}", "y":"0", "width":f"{height}", "height":f"{height}"}
+                )
                 xmlpp_ET.SubElement(rect, "Fill", {"color":"#00FF00"})
             return root
     </Define>
@@ -117,14 +121,35 @@
     </Symbol>
 
     <Scene backgroundColor="#ff000000">
-        <PartDraw x="100" y="75" width="250" height="20">
+        <!-- Squares across top (demonstrating Python generation of XML): -->
+        <PartDraw width="250" height="30" x="{centre(PARENT.width, SELF.width)}" y="65">
             {generateSquares(5, SELF.width, SELF.height)}
         </PartDraw>
 
-        <!-- Left complication: -->
+        <!-- Digits across top (demonstrating <Repeat>): -->
+        <Repeat for="n" in="range(5)">  <!-- 0 to 4 -->
+            <PartText
+                width="50"
+                height="50"
+                x="{round(centre(PARENT.width, SELF.width) + 55 * (n - 2))}"
+                y="54">
+                <Text>
+                    <Font
+                        family="SYNC_TO_DEVICE"
+                        size="35"
+                        color="#000000">
+                        <Template>%s
+                            <Parameter expression="{n}" />
+                        </Template>
+                    </Font>
+                </Text>
+            </PartText>
+        </Repeat>
+
+        <!-- Left complication slot: -->
         <Use href="shortTextComplic" />
 
-        <!-- Right complication (with extra text padding): -->
+        <!-- Right complication slot (with extra text padding): -->
         <Use href="shortTextComplic" slotId="2" data-text-padding="{COMPLIC_TEXT_PADDING}">
             <!-- Change background colour: -->
             <Transform href=".//Fill" target="color" value="{COMPLIC_FILL_ALTERNATIVE}" />
@@ -132,7 +157,7 @@
             <Delete href="ComplicationSlot/Complication/PartText[2]" />
         </Use>
 
-        <!-- Top complication: -->
+        <!-- Bottom complication slot: -->
         <Use href="rangedValueComplic" y="350" slotId="3"/>
     </Scene>
 </WatchFace>

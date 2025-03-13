@@ -2,7 +2,7 @@
 
 _XML Preprocessor_ is a program that allows some extensions to the [Google-Samsung Watch Face Format XML schema](https://developer.android.com/training/wearables/wff/watch-face). It reduces the need to repeat values and XML elements, and it allows attribute values to be specified using meaningful names and equations.
 
-Because it runs prior to the watchface being built, _XML Preprocessor_ can't provide any additional on-watch capabilities. This also means that it has no impact on watchface runtime performance, memory usage or battery life.
+Because it runs prior to the watchface being built, _XML Preprocessor_ can't provide any additional on-watch capabilities. This also means that it has no impact on watchface runtime performance, memory usage or battery life (unless you abuse _XML Preprocessor_'s ability to create multiple XML elements easily).
 
 The preprocessor works by:
 
@@ -28,12 +28,16 @@ This documentation assumes:
     - [`<Transform>`](#transform)
     - [`<Delete>`](#delete)
     - [`<Symbol>` Candidate Selection](#candidates)
+  - [`<Repeat>` Elements](#repeat)
   - [XML Element `{Expression}`s](#expressions)
   - [`<Import>` Elements](#import)
     - [`<Import>` XML](#import_xml)
     - [`<Import>` Python](#import_py)
   - [Example](#full_example)
 - [Installation](#installation)
+  - [Install with Clockwork](#install-clockwork)
+  - [Manual Installation](#install-manual)
+  - [lxml](#install-lxml)
 - [Usage](#usage)
   - [Prepare Input File](#prepare)
   - [Run the Preprocessor](#run)
@@ -41,9 +45,9 @@ This documentation assumes:
   - [Debugging](#debugging)
     - [`pp_log()`](#pp_log)
 - [Limitations](#limitations)
-- [Breaking Changes](#breaking)
+- [Change Log](#breaking)
 - [Other Applications](#applications)
-  - [XSLT](#xslt)
+- [Similar Tools](#tools)
 
 ## <a id="features"></a>FEATURES
 
@@ -51,7 +55,7 @@ This documentation assumes:
 
 `<Define>` elements can be used to contain Python code that defines variables and functions. Those variables and functions can then be used in other `<Define>` code and in [XML element `{expression}`s](#expressions).
 
-#### Example:
+#### Example
 
     <Define>
         GAUGE_DIAMETER = 200
@@ -66,8 +70,6 @@ This documentation assumes:
         ...
 
 #### Notes
-
-All `<Define>` elements must be direct children of the `<Watchface>` element.
 
 Everything between the opening and closing tags (`<Define>` and `</Define>`) must be Python variable and function definitions.
 
@@ -87,10 +89,7 @@ Comments can be included in `<Define>` code using normal Python conventions.
 
 You can have multiple definitions in a single `<Define>` element; you can also use multiple `<Define>` elements.
 
-The preprocessor executes _all_ `<Define>` elements in the input file before it does anything else. Because of this:
-
-- It isn't useful to redefine variables or functions; only the final definitions will be retained. An unfortunate consequence of this is that you can't have `<Define>`d variables or functions local to a sub-branch within your XML tree.
-- It isn't possible to refer to values that are evaluated in [XML element `{expressions}`s](#expressions) (_eg_, `"{SELF.width}"`). Such values need to be passed to Python functions as parameters, as in the `centre()` example above.
+The preprocessor executes code in `<Define>` elements in the order in which it appears in the input XML file. This means that symbols can be redefined throughout the file.
 
 #### <a id="data-source-values"></a>WFF Data Source Values
 
@@ -106,7 +105,7 @@ This could then be used in an `{expression}` like this:
         {myTagEquation}
     </Expression>
 
-This can be useful if such blocks of code need to be repeated (in which case, consider putting them in a [`<Symbol>`](#symbol)).
+This can be useful if such blocks of code need to be repeated (in which case, consider using [`<Repeat>`](#repeat) or putting them in a [`<Symbol>`](#symbol)).
 
 You can write Python functions that take data source names as parameters and return a string representation of an equation; _eg_:
 
@@ -126,7 +125,7 @@ Note that embedding string literals (_eg_, `'[SECOND]'`) within attribute values
 
 #### <a id="returning-xml"></a>Returning XML
 
-Normally, functions within `<Define>` will return a string or string-compatible value that will be used within an XML attribute value. The `centre()` example (above) does this. However, if a function returns an [ElementTree.Element object](https://docs.python.org/3/library/xml.etree.elementtree.html#element-objects), that element and/or its children will be inserted into the watchface.xml element tree in place of the `{expression}` that called it. Here's an example:
+Normally, functions within `<Define>` will return a string or string-compatible value that will be used within an XML attribute value. The `centre()` example (above) does this. However, if a function returns an [Element object](https://lxml.de/apidoc/lxml.etree.html#lxml.etree.Element), that element and/or its children will be inserted into the watchface.xml element tree in place of the `{expression}` that called it. Here's an example:
 
     <Define>
         def generateSquares(count, width, height):
@@ -145,7 +144,7 @@ Normally, functions within `<Define>` will return a string or string-compatible 
     </PartDraw>
 
 > [!Note]
-> The most politically-correct way to create XML elements is probably to use `ElementTree` methods as above. However, if you're uncomfortable with that, you can construct your XML as a string and convert it to an Element object when done. If you do this, you'll need to escape characters such as `<` and `>`. This version of the above example generates the same XML:
+> The most politically-correct way to create XML elements is probably to use `etree` methods as above. However, if you're uncomfortable with that, you can construct your XML as a string and convert it to an Element object when done. If you do this, you'll need to escape characters such as `<` and `>`. This version of the above example generates the same XML:
 
     def generateSquares(count, width, height):
         # Returns XML for a row of count squares, to fit within a PartDraw of width and height.
@@ -159,17 +158,19 @@ Normally, functions within `<Define>` will return a string or string-compatible 
 
 Usage:
 
-- You can use `xmlpp_ET` to access Python's `ElementTree` module.
+- You can use `xmlpp_ET` to access Python's [`lxml.etree`](https://lxml.de/apidoc/lxml.etree.html) module.
 
 - The element returned by a Python function can be the root of a tree containing a hierarchy of sub-elements.
 
-- <a id="dummy"></a>If you want to insert multiple elements at the top level, wrap them in a `<Dummy>` root element (as in the example above). The `<Dummy>` element itself won't be inserted, but all of its sub-elements will be. However, if the tag of the root element is _not_ `Dummy`, the root (and its sub-elements) will be inserted.
+- <a id="dummy"></a>If you want to insert multiple elements at the top level, wrap them in a `<Dummy>` root element (as in the example above). The `<Dummy>` element itself won't be inserted, but all of its child elements will be. However, if the tag of the root element is _not_ `Dummy`, the root (and its child elements) will be inserted.
 
 - XML elements can be inserted into an element's text (as above) or appended to its tail. The latter is achieved by putting the `{expression}` _after_ an element's closing tag, and has the effect of inserting the returned elements after the closing tag (_ie_, they will have the same parent).
 
 - The `{expression}` that calls the element generation function must be the only content in the element's text or tail.
 
 - XML elements can't be inserted into an attribute value, so don't call a function that returns an element from within an attribute value `{expression}`.
+
+- If you only need to generate a sequence of similar elements, consider using [`<Repeat>`](#repeat) instead of a Python function.
 
 > [!Note]
 > The ability to generate XML from Python is not as useful as it might initially seem. As with everything that the preprocessor does, it happens prior to the watchface being built; it does not happen when the watchface is running.
@@ -213,8 +214,6 @@ You can employ `<Symbol>` elements to define a set of XML elements (including ch
 
 All `<Symbol>`s must have an `id` attribute. All `<Use>`s must have an `href` attribute, the value of which must match the `id` attribute of the `<Symbol>` to be inserted.
 
-All `<Symbol>` elements must be direct children of the `<Watchface>` element.
-
 `<Use>` elements can be placed wherever the contents of the corresponding `<Symbol>` would be valid.
 
 The `<Symbol>` element itself is not written to the output `watchface.xml` file. Only copies of the _contents_ of the `<Symbol>`, as specified by `<Use>` elements, are written.
@@ -225,15 +224,17 @@ A `<Symbol>` can contain one or more `<Use>` elements, which must refer to other
 
 A `<Symbol>` can't contain other `<Symbol>` elements (but see above). All `<Symbol>`s are considered to be global regardless of where they are declared; there is no way to limit a `<Symbol>`'s accessibility.
 
-`<Symbol>`s can include [`{expressions}`s](#expressions) which can, in turn, include variables and functions defined in [`<Define>`](#defines) elements. The example above contains several of these (although the `<Define>` element is not shown).
+`<Symbol>`s can include [`{expression}`s](#expressions) which can, in turn, include variables and functions defined in [`<Define>`](#defines) elements. The example above contains several of these (although the `<Define>` element is not shown).
 
 `<Symbol>` and `<Use>` can reduce the size of, and duplication in, your source file, but they won't do so for your `watchface.xml` file (which is used on the watch). This is because the preprocessor applies `<Symbol>` and `<Use>` elements _before_ the watchface build process happens. It has to be this way because WFF does not support `<Symbol>` and `<Use>`.
+
+While `<Use>` can be employed to insert multiple copies of elements sequentially, the same effect can often be achieved more easily using [`<Repeat>`](#repeat). Bear this in mind if you're tempted to employ sequential `<Use>` elements for the same `<Symbol>`.
 
 #### <a id="use_attrib"></a>Customising `<Use>` Instances with Top-level Attributes
 
 `<Symbol>` and `<Use>` allow you to reuse similar elements without copying and pasting. However, you will often want to make minor adjustments to each instance; _eg_, specifying different `x` and `y` values. There are a few ways to achieve this.
 
-If you specify attribute values in a `<Use>` element, those values (except for that of `href`) will be applied to _all_ of the top-level elements in the `<Symbol>` when it is inserted. The example above uses this feature: the second `<Use>` element overrides the value of the `<Symbol>`'s `x` attribute, so the second circle will have a different x value to that of the first circle.
+If you specify attribute values in a `<Use>` element, those values (except for that of `href`) will be applied to _all_ of the top-level elements in the `<Symbol>` when it is inserted. The example above employs this feature: the second `<Use>` element overrides the value of the `<Symbol>`'s `x` attribute, so the second circle will have a different `x` value to that of the first circle.
 
 Attribute values specified in a `<Use>` element do not change the `<Symbol>`; they're only applied to the _copy_ of the `<Symbol>` that's inserted in place of the `<Use>`. Subsequent `<Use>`s of the same `<Symbol>` will not include attribute values specified in prior `<Use>`s.
 
@@ -289,7 +290,7 @@ A more flexible way to customise `<Symbol>` attribute values is to include one o
             value="ANTICLOCKWISE" />
     </Use>
 
-<a id="xpath"></a>The `href` attribute of the `<Transform>` element can accept any [`XPath`](https://docs.python.org/3/library/xml.etree.elementtree.html#xpath-support) expression supported by Python's [`eTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#) implementation; _eg_:
+<a id="xpath"></a>The `href` attribute of the `<Transform>` element can accept any [`XPath`](https://en.wikipedia.org/wiki/XPath) expression supported by Python's [`lxml.etree`](https://lxml.de/xpathxslt.html#xpath) implementation; _eg_:
 
 - `"PartDraw"` matches all `<PartDraw>` elements that are direct children of the `<Symbol>`
 
@@ -308,7 +309,7 @@ Attribute value changes specified in a `<Use> <Transform>` element don't change 
 
 The preprocessor's `<Transform>` element is not the same as WFF's `<Transform>` element. The preprocessor's `<Transform>` element can only appear within a `<Use>` element, takes effect when the preprocessor is executed (as opposed to when the watchface is running), and requires a `href` attribute.
 
-You can usually achieve the same effect as `<Transform>` by [setting attribute values directly in the `<Use>` element](#use_attrib), and copying them internally within the `<Symbol>` with [`PARENT`](#self_parent) or [`SELF`](#self_parent). This can be more concise if you need to set multiple attributes to the same (or related) value. Remember that attributes that aren't valid WFF for the top-level elements in the `<Symbol>` should have names that start with `data-` so they'll be deleted after preprocessing.
+You can usually achieve the same effect as `<Transform>` by [setting attribute values directly in the `<Use>` element](#use_attrib), and copying them internally within the `<Symbol>` with [`PARENT`](#self_parent) or [`SELF`](#self_parent). This can be more concise if you need to set multiple attributes to the same (or a related) value. Remember that attributes that aren't valid WFF for the top-level elements in the `<Symbol>` should have names that start with `data-` so they'll be deleted after preprocessing.
 
 #### <a id="delete"></a>`<Delete>`
 
@@ -324,6 +325,73 @@ Because you can delete elements from a `<Symbol>` when you `<Use>` it, but you c
 #### <a id="candidates"></a>`<Symbol>` Candidate Selection
 
 Most IDEs and code editors can highlight differences between two documents. This can be a useful way of assessing whether two blocks of code have enough similarities to justify converting them to a `<Symbol>`, and it can show what `<Transform>`s and `<Delete>`s are necessary to adapt the `<Symbol>` to each `<Use>` instance. You may need to copy each code block into a separate document to facilitate comparison.
+
+---
+
+### <a id="repeat"></a>`<Repeat>` Elements
+
+You can use `<Repeat>` to create multiple sequential copies of its child elements.
+
+#### Example
+
+    <Repeat for="n" in="range(3)">
+        <Line startX="{n*10}" .../>
+        <Arc .../>
+    </Repeat>
+
+The preprocessor executes a Python [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statement using the `for` and `in` attribute values. For every iteration of that loop, it inserts a copy of the elements within the `<Repeat>`.
+
+The Python variable name specified in the `for` attribute is available to the repeated elements. In the above example, it is used to specify a different `startX` for every `<Line>`.
+
+The output resulting from this example is:
+
+        <Line startX="0" .../>
+        <Arc .../>
+        <Line startX="10" .../>
+        <Arc .../>
+        <Line startX="20" .../>
+        <Arc .../>
+
+#### Notes
+
+The `<Repeat>` element itself is not copied to the output file; only its children are.
+
+The `in` attribute can be any valid Python [`range`](https://docs.python.org/3/library/stdtypes.html#range) expression, so it can also specify starting and increment (step) values.
+
+The `in` attribute can use Python symbols defined in [`<Define>`](#defines) elements.
+
+`<Repeat>` elements can be nested; _eg_:
+
+    <Repeat for="x" in="range(0, 30, 10)">
+        <Repeat for="y" in="range(0, 50, 10)">
+            <Line startX="{x}" startY="{y}" .../>
+        </Repeat>
+    </Repeat>
+
+`<Repeat>` is well-suited to creating multiple similar sets of elements in sequence. However, if you need to create similar sets of elements elsewhere (_ie_, not in sequence), [`<Use>`](#symbol) may be more appropriate.
+
+If you need more flexibility in the creation of repeated elements than is possible with `<Repeat>`, you can [generate sequences of XML elements using Python code](#returning-xml).
+
+> [!WARNING]
+
+> In theory, any valid [Python `in` expression](https://docs.python.org/3/reference/compound_stmts.html#for) should work. However, only `range` has been tested.
+
+> [!WARNING]
+
+> `<Repeat>` makes it easy to generate a large number of XML elements. Each generated element must be processed by the watch when the watchface is running, with consequent impact on performance, memory and battery usage. Therefore, `<Repeat>` (and especially nested `<Repeat>`s) should be used judiciously. For example, even though `<Repeat>` could be used to create 60 tick marks around an index, it would probably be more efficient to use a single `<Image>` for this (and for static content in general).
+
+>[!TIP]
+>The preprocessor expands `<Repeat>` elements into an intermediate form for subsequent processing. In the case of the example above, this form is:
+
+        <Define>n=0</Define>
+        <Line startX="{n*10}" .../>
+        <Arc .../>
+        <Define>n=1</Define>
+        <Line startX="{n*10}" .../>
+        <Arc .../>
+        <Define>n=2</Define>
+        <Line startX="{n*10}" .../>
+        <Arc .../>
 
 ---
 
@@ -343,7 +411,7 @@ In some places, text enclosed in curly brackets `{ }` will be executed as a Pyth
 
 - XML attribute values (as in the example above)
 
-- XML element text (_eg_, WFF [`<Template>`](https://developer.android.com/training/wearables/wff/group/part/text/formatter/template) elements)
+- XML element text (_eg_, within WFF [`<Template>`](https://developer.android.com/training/wearables/wff/group/part/text/formatter/template) elements)
 
 - XML element tail (rarely/never used in WFF).
 
@@ -363,7 +431,7 @@ Everything between the opening and closing curly brackets must be a Python expre
 
 If an `{expression}` calls a function that returns an XML element, that element and/or its sub-elements will be inserted in place of the `{expression}`. For details, see [here](#returning-xml).
 
-Mathematical expressions in `<Define>` or `{expression}` can result in non-integer values, but some WFF attributes (_eg_, x) require integers. Use Python's `round()` function in such expressions.
+Mathematical expressions in `<Define>` or `{expression}` can result in non-integer values, but some WFF attributes (_eg_, `x`) require integers. Use Python's `round()` function in such expressions.
 
 <a id="self_parent"></a>Two special variables can be used within `{expression}`s:
 
@@ -394,7 +462,6 @@ Mathematical expressions in `<Define>` or `{expression}` can result in non-integ
 
 Notes:
 
-- All `<Import>` elements must be direct children of the root XML element.
 - An `<Import>`ed file can contain `<Import>` elements.
 - In addition to the filename, a path (directory/folder) can be included in `href`.
 - `href` paths are relative to the directory of the file containing the `<Import>` element.
@@ -462,17 +529,17 @@ A complete example of a preprocessor input file is [here](example/watchface/watc
 
 ## <a id="installation"></a>INSTALLATION
 
-### Install with [Clockwork](https://clockwork-pkg.pages.dev/)
+### <a id="install-clockwork"></a>Install with [Clockwork](https://clockwork-pkg.pages.dev/)
 
-Clockwork is the easiest way to manage the dependencies of your Watch Face Format project. If you don't have it yet, learn how to install Clockwork at [clockwork-pkg.pages.dev](https://clockwork-pkg.pages.dev/install).
+`Clockwork` is the easiest way to manage the dependencies of your Watch Face Format project. It can also validate, build and install watchfaces. If you don't have it yet, learn all about it at [clockwork-pkg.pages.dev](https://clockwork-pkg.pages.dev/install).
 
 ```shell
 clockwork add xml-preprocessor
 ```
 
-Clockwork will automatically try to install a compatible version of python when [building with Clockwork](https://clockwork-pkg.pages.dev/guides/creating) if it can't find it.
+If Clockwork can't find a compatible version of Python when [building](https://clockwork-pkg.pages.dev/guides/creating), it will automatically try to install Python.
 
-### Manual Installation
+### <a id="install-manual"></a>Manual Installation
 
 Install a relatively recent version of [Python](https://www.python.org/) (_eg_, 3.13+).
 
@@ -480,6 +547,12 @@ Put `preprocess.py` somewhere where you can conveniently access it from your wat
 
 > [!IMPORTANT]
 > If your project already contains a `watchface\src\main\res\raw\watchface.xml` file (and it probably does), **_COPY THIS FILE TO SOMEWHERE SAFE_** because you will probably use the preprocessor to overwrite it.
+
+### <a id="install-lxml"></a>lxml
+
+When first run, the preprocessor will try to install Python's `lxml` module if necessary. If it fails (_eg_, because `pip` can't be found), you will need to do this manually:
+
+    pip install lxml
 
 ## <a id="usage"></a>USAGE
 
@@ -524,7 +597,7 @@ If there were no errors, the output file will have been created. If you like, yo
 `preprocess.py` will normally refuse to write the output file if doing so would overwrite an extant file. To allow it to overwrite, add the `-y` command line parameter.
 
 > [!TIP]
-> If you use Microsoft Windows, [wff-build-script](https://github.com/gondwanasoft/wff-build-script) can run the preprocessor, validate, build and install your watch face with a single command.
+> [Clockwork](#install-clockwork) can call `preprocess.py` as part of its build process. Alternatively, if you use Microsoft Windows, [wff-build-script](https://github.com/gondwanasoft/wff-build-script) can also run the preprocessor, validate, build and install your watch face.
 
 ### <a id="build"></a>Build and Test Watchface
 
@@ -534,18 +607,23 @@ Use the output file (typically `watchface.xml`) to build and test the watchface 
 
 If the preprocessor can't process the input file, it will either display an error message or throw an uncaught exception. In either case, the console output should help you to identify the problem.
 
+> [!WARNING]
+> On error, the preprocessor will often report a line number for the error in the original source file. Line numbers are only approximate; in some cases, they can be very misleading. If the erronous element was generated internally by the preprocessor, the line number will be 'None'.
+
 > [!NOTE]
 > Processing stops as soon as one error is encountered. There could be multiple errors in the input file, so you need to keep correcting errors and rerunning the preprocessor until it completes successfully.
 
 If the error message doesn't help, examine the output file to see how it differs from what you wanted.
 
-For additional information, you can run `preprocess.py` again but with the `-d` command line parameter added. This will display a log of the preprocessor's activities and intermediate results, which may help you to work out what it's doing.
+For additional information, you can run `preprocess.py` again but with the `-d` command line parameter added. This will save a log of the preprocessor's activities and intermediate results to `debug-pp.txt`. The state of the XML document at the time of the error is saved to `debug-pp.xml` (unless the error occurred during initial XML loading).
+
+Most types of error will be flagged in `debug-pp.xml` by adding an attribute named `xmlpp-error` to the offending element. This isn't possible where the offending element has been removed prior to the error being detected (_eg_, `<Delete href="not-found">`). The actual source of the error could be well below the `xmlpp-error` attribute; it could even be in the element's tail (_ie_, the text between its end-tag and next element's start-tag).
 
 Even if the preprocessor completes successfully, it's eminently possible for the output file to be rejected by the watchface build process (`gradle`), or for the resulting watchface to look wrong or behave unexpectedly. Examine the output file and/or use `-d` to work out why.
 
 > <a id="validator"></a>
 
-> [!NOTE]
+> [!TIP]
 > If you get errors when you attempt to build the watchface, use the [Format validator](https://github.com/google/watchface/tree/main/third_party/wff) to check your `watchface.xml`. Ideally, you always do this before you attempt to build the watchface, since it can provide much more useful error messages than the build process. Be aware that line numbers (_etc_) reported by the validator refer to `watchface.xml` rather than the preprocessor's input file (_eg_, `watchface-pp.xml`).
 
 > [!TIP]
@@ -587,7 +665,7 @@ The preprocessor uses two insecure Python functions ([`exec()`](https://docs.pyt
 
 The preprocessor will catch and report some error conditions nicely. However, many error conditions will not be caught and will result in the preprocessor throwing Python exceptions.
 
-The preprocessor doesn't check whether the file it creates is valid WFF XML (see [tip](#validator)).
+The preprocessor doesn't check whether the file it creates is valid WFF XML (see this [tip](#validator)).
 
 Python code in `<Define>` elements is global, rather than being encapsulated within the scope in which it is declared.
 
@@ -602,11 +680,13 @@ IDEs and code editors are unlikely to provide coding assistance for Python code 
 
 `watchface-pp.xml` or `watchface.xml` files used by the preprocessor can't be imported into [Samsung's Watch Face Studio](https://developer.samsung.com/watch-face-studio/overview.html) because that app doesn't support importing XML.
 
-The formatting of the XML file generated by the preprocessor can be ugly (see [tip](#ugly)).
+The formatting of the XML file generated by the preprocessor can be ugly (see this [tip](#ugly)).
 
 XML comments in the input file are not included in the output file.
 
-## <a id="breaking"></a>BREAKING CHANGES
+## <a id="breaking"></a>CHANGE LOG
+
+_This section describes major changes only; see [github](https://github.com/gondwanasoft/xml-preprocessor/commits/main/) for more._
 
 #### Version 1.3.0
 
@@ -614,17 +694,50 @@ Prior to v1.3.0, [`<Import>`ed XML elements](#import_xml) always needed a `<Widg
 
 This change was made for consistency with the use of [Python functions that return XML](returning-xml). Such functions won't always return widgets (components). Moreover, since most `<Import>` files will only contain a `<Symbol>`, the need to wrap it within another element to ensure a single root was redundant.
 
+#### Version 2.0.0
+
+The Python `lxml` module is now used for XML parsing and manipulation. This may result in some breaking changes and new bugs, although backward compatibility has been tested fairly thoroughly.
+
+[`<Define>`](#defines) elements can now be used in child elements at any level (_ie_, they no longer need to have the root element as their immediate parent).
+
+Code in [`<Define>`](#defines) elements is now executed in the order in which it appears in the XML file, in conjunction with [{expression}](#expressions) evaluation. Previously, all `<Define>` code was executed before evaluating any `{expression}`s.
+
+[`<Symbol>`](#symbol) elements can now be used in child elements at any level (_ie_, they no longer need to have the root element as their immediate parent).
+
+[`<Repeat>`](#repeat) element has been added.
+
+Empty [`{expression}`s](#expressions); _ie_, those that become `{}` after variable substitution, are now simply removed. Previously, the empty expression was passed to Python for evaluation, which never ended well.
+
+A bug has been fixed when evaluating an `{expression}` that returned an empty string; eg, `{"   ".strip()}`. Previously, this would result in the `{expression}` (Python code and braces) being copied into the output XML file.
+
+When an error occurs, the preprocessor now displays the reported line number of the error in the original source file. If the erronous element was generated internally by the preprocessor, the line number will be 'None'. Line numbers are only approximate; in some cases, they can be very misleading.
+
+When executed with the `-d` (debug) command-line option, the log is now saved to `debug-pp.txt` instead of being displayed on the console. The state of the XML document at the time of the error is now saved to `debug-pp.xml` (unless the error occurred during initial XML loading).
+
+Most types of error will now be flagged in `debug-pp.xml` by adding an attribute named `xmlpp-error` to the offending element. This isn't possible where the offending element has been removed prior to the error being detected (_eg_, `<Delete href="not-found">`). The actual source of the error could be well below the `xmlpp-error` attribute; it could even be in the element's tail (_ie_, the text between its end-tag and next element's start-tag).
 
 ## <a id="applications"></a>OTHER APPLICATIONS
 
 Although `preprocessor.py` was written specifically to help with WFF XML, the approach is fairly general. As a result, it should work in many other situations in which XML file generation can benefit from its features. Possible issues include:
 
-- XML element tags used by the preprocessor (`<Define>`, _etc_) may clash with the semantics of the XML schema being used.
+- XML element tags used by the preprocessor (`<Define>`, _etc_) may clash with those of the XML schema being used.
 - The use of curly brackets `{ }` to embed expressions may clash with other uses of such brackets.
-- The output file will be reformatted.
+- The formatting of the output file will rarely match that of the input file.
 - XML `<!--comments-->` will not appear in the output file.
 - `CDATA` strings and escape characters (`&amp;`, _etc_) may be changed.
+
+## <a id="tools"></a>SIMILAR TOOLS
+
+### <a id="xinclude"></a>XInclude
+
+[XInclude](https://en.wikipedia.org/wiki/XInclude) can be used in some contexts to do similar things to preprocessor's [`<Import>`](#import).
 
 ### <a id="xslt"></a>XSLT
 
 XSLT is a more powerful tool for generating XML. It doesn't rely on custom XML elements and attribute values, but uses a separate `.xslt` file to describe the transformations required. If your need is primarily data/format transformation, XSLT is superior.
+
+### <a id="peitaosu"></a>peitaosu/XML-Preprocessor
+
+[peitaosu/XML-Preprocessor](https://github.com/peitaosu/XML-Preprocessor/tree/master) is a repo that contains some equivalent features, such as `include` ([`<Import>`](#import)) and iteration ([`<Repeat>`](#repeat)).
+
+
