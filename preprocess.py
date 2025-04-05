@@ -49,9 +49,18 @@ xmlpp_check_modules()
 from lxml import etree as xmlpp_ET
 from xml.sax.saxutils import unescape
 
+xmlpp_VERSION = "XML Preprocessor 2.1.0"
 xmlpp_debug_file = None
 xmlpp_source_file = xmlpp_dest_file = None
 xmlpp_symbols = {}  # associative array (disctionary) of <Symbol> elements, indexed by [id]
+
+class xmlpp_PhasePrinter:
+    def __init__(self): self.phase = 1
+    def print(self, text):
+        print(f"\nPhase {self.phase}: {text}...", file=xmlpp_debug_file)
+        self.phase += 1
+
+xmlpp_phase_printer = xmlpp_PhasePrinter()
 
 def xmlpp_insert(xmlpp_dest, xmlpp_index, xmlpp_source, xmlpp_children_only=False):
     """ Insert source into dest at index. If source.tag=="Dummy" or xmlpp_children_only, insert children only.
@@ -79,14 +88,16 @@ def xmlpp_parse_args():     # parse command-line arguments
         elif xmlpp_source_file is not None: xmlpp_dest_file = xmlpp_arg
         else: xmlpp_source_file = xmlpp_arg
 
-    if xmlpp_DEBUG: xmlpp_debug_file = open('debug-pp.txt', 'w')
-
     if xmlpp_source_file is None or xmlpp_dest_file is None or xmlpp_USAGE_ERROR:
-        print("XML Preprocessor 2.0.0")
+        print(xmlpp_VERSION)
         print("Usage: preprocess.py sourceFile destinationFile [-d] [-y]")
         print("   -d prints debugging info")
         print("   -y overwrites destinationFile")
         exit(1)
+
+    if xmlpp_DEBUG:
+        xmlpp_debug_file = open('debug-pp.txt', 'w')
+        print(xmlpp_VERSION, file=xmlpp_debug_file)
 
     if not os.path.exists(xmlpp_source_file):
         raise xmlpp_error("can't find "+xmlpp_source_file)
@@ -143,7 +154,7 @@ def xmlpp_load_source(xmlpp_source):
         #xmlpp_dump_el(xmlpp_root,"root")
         return xmlpp_tree
 
-    if xmlpp_DEBUG: print(f"Phase 1: loading source file(s)...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("loading source file(s)")
     return xmlpp_load_tree(xmlpp_source)
 
 def xmlpp_dump_el(xmlpp_el, xmlpp_el_name, xmlpp_indent=0):     # used with xmlpp_DEBUG
@@ -160,7 +171,7 @@ def xmlpp_dump_el(xmlpp_el, xmlpp_el_name, xmlpp_indent=0):     # used with xmlp
 def xmlpp_extract_symbols():    # put all <Symbol> elements in xmlpp_symbol_els[] and delete them from tree
     global xmlpp_symbols
 
-    if (xmlpp_DEBUG): print("\nPhase 2: extracting <Symbols>...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("extracting <Symbols>")
 
     xmlpp_symbol_els = []
     for xmlpp_symbol_el in xmlpp_root.iter('Symbol'):
@@ -179,7 +190,7 @@ def xmlpp_extract_symbols():    # put all <Symbol> elements in xmlpp_symbol_els[
         xmlpp_parent.remove(xmlpp_el)
 
 def xmlpp_replace_all_uses(): # replace all <Use> elements
-    if (xmlpp_DEBUG): print("\nPhase 3: replacing <Use>s with <Symbol>s...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("replacing <Use>s with <Symbol>s")
 
     def xmlpp_replace_use(xmlpp_el):
         # Recursive.
@@ -251,7 +262,7 @@ def xmlpp_replace_all_uses(): # replace all <Use> elements
     xmlpp_replace_use(xmlpp_root)
 
 def xmlpp_expand_all_repeats(): # expand all <Repeat> elements
-    if (xmlpp_DEBUG): print("\nPhase 4: expanding <Repeat> elements...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("expanding <Repeat> elements")
 
     def xmlpp_expand_repeats(xmlpp_el):
         def xmlpp_insert_repeat(xmlpp_parent_el, xmlpp_repeat_els, xmlpp_index, xmlpp_for_var, xmlpp_for_val):
@@ -295,7 +306,7 @@ def xmlpp_expand_all_repeats(): # expand all <Repeat> elements
     xmlpp_expand_repeats(xmlpp_root)
 
 def xmlpp_do_defines_and_expressions(): # execute <Define>s and replace all {expression}s with their results
-    if (xmlpp_DEBUG): print("\nPhase 5: processing <Define>s and {expression}s...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("processing <Define>s and {expression}s...")
 
     def xmlpp_exec_definitions(xmlpp_text, xmlpp_el):
         def xmlpp_find_indent_size(xmlpp_firstLine):
@@ -402,7 +413,7 @@ def xmlpp_do_defines_and_expressions(): # execute <Define>s and replace all {exp
                 return xmlpp_result
             if '{' in str(xmlpp_result): raise xmlpp_error(f"evaluated expression {xmlpp_exp} seems to contain another expression", xmlpp_el)
             #print(exp,str(result))
-            xmlpp_matches[xmlpp_matchIndex] = str(xmlpp_result)
+            xmlpp_matches[xmlpp_matchIndex] = '' if xmlpp_result is None else str(xmlpp_result)
         xmlpp_matches = "".join(xmlpp_matches)
         if xmlpp_DEBUG: print(f'      Result: <{xmlpp_el.tag} {xmlpp_attrib_name}="{xmlpp_matches}"', file=xmlpp_debug_file)
         return xmlpp_matches
@@ -423,13 +434,14 @@ def xmlpp_do_defines_and_expressions(): # execute <Define>s and replace all {exp
             if (xmlpp_text):
                 # print("   tag with text: "+xmlpp_el.tag)
                 xmlpp_processedText = xmlpp_evalStringWithExpressions(xmlpp_el, xmlpp_text)
-                if xmlpp_processedText is not False:
-                    #print("\txmlpp_processedText=\""+xmlpp_processedText+"\"")
+                if xmlpp_processedText is not False:    # replacement of original text is required
+                    # print("\txmlpp_processedText=\""+xmlpp_processedText+"\"")
                     if isinstance(xmlpp_processedText, str):
                         xmlpp_el.text = xmlpp_processedText
-                    else:   # insert XML elements
+                    else:   # replace text with XML elements, or just delete text if None (eg, function call returning None):
                         xmlpp_el.text = ""
-                        xmlpp_insert(xmlpp_el, 0, xmlpp_processedText)
+                        if xmlpp_processedText is not None:
+                            xmlpp_insert(xmlpp_el, 0, xmlpp_processedText)
         # Evaluate {expression}s in element's tail:
         if xmlpp_el.tail:
             xmlpp_tail = xmlpp_el.tail.strip()
@@ -460,15 +472,46 @@ def xmlpp_do_defines_and_expressions(): # execute <Define>s and replace all {exp
         if xmlpp_parent is None: raise xmlpp_error("Can't remove a <Define> because it is the root element", xmlpp_el)
         xmlpp_parent.remove(xmlpp_el)
 
+def xmlpp_process_all_ifs():  # process all <If> elements
+    xmlpp_phase_printer.print("applying <If> elements...")
+
+    def xmlpp_process_ifs(xmlpp_el):
+        xmlpp_index = 0
+        while xmlpp_index < len(xmlpp_el):
+            xmlpp_child_el = xmlpp_el[xmlpp_index]
+            # print(xmlpp_child_el.tag)
+            if xmlpp_child_el.tag == "If":
+                if "condition" not in xmlpp_child_el.attrib: xmlpp_error("<If> missing 'condition' attribute.")
+                xmlpp_condition = xmlpp_child_el.attrib["condition"]
+                if (xmlpp_DEBUG): print(f'   Considering <If condition="{xmlpp_condition}">', file=xmlpp_debug_file)
+                if xmlpp_condition == 'True':
+                    xmlpp_if_els = []
+                    for xmlpp_if_el in xmlpp_child_el:  # make deep copy of each xmlpp_child_el because lxml wants each el to have its own parent
+                        xmlpp_if_els.append(copy.deepcopy(xmlpp_if_el))
+                    xmlpp_el.remove(xmlpp_child_el) # remove the <If> itself
+                    # Insert xmlpp_if_els:
+                    xmlpp_if_index = xmlpp_index
+                    for xmlpp_if_el in xmlpp_if_els:
+                        #print(f"inserting content at {xmlpp_index}")
+                        xmlpp_el.insert(xmlpp_if_index, xmlpp_if_el)
+                        xmlpp_if_index += 1
+                else:       # xmlpp_condition != 'True'
+                    xmlpp_el.remove(xmlpp_child_el)   # delete this <If>
+            else:   # xmlpp_child_el is not <If>
+                xmlpp_process_ifs(xmlpp_child_el)    # recurse
+                xmlpp_index += 1
+
+    xmlpp_process_ifs(xmlpp_root)
+
 def xmlpp_remove_data_attributes():
-    if (xmlpp_DEBUG): print("\nPhase 6: removing data- attributes...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("removing data- attributes")
     for xmlpp_el in xmlpp_root.iter():
         for xmlpp_attrib_name in xmlpp_el.keys():
             if xmlpp_attrib_name.startswith("data-"):
                 xmlpp_el.attrib.pop(xmlpp_attrib_name, None)
 
 def xmlpp_write_dest(xmlpp_dest_file):
-    if xmlpp_DEBUG: print(f"\nPhase 7: writing {xmlpp_dest_file}...", file=xmlpp_debug_file)
+    xmlpp_phase_printer.print("writing {xmlpp_dest_file}...")
     xmlpp_tree.write(xmlpp_dest_file)
     if xmlpp_DEBUG: print(f"\nFinished: no preprocessor errors found.", file=xmlpp_debug_file)
 
@@ -487,6 +530,7 @@ xmlpp_extract_symbols()
 xmlpp_replace_all_uses()
 xmlpp_expand_all_repeats()
 xmlpp_do_defines_and_expressions()
+xmlpp_process_all_ifs()
 xmlpp_remove_data_attributes()
 xmlpp_write_dest(xmlpp_dest_file)
 

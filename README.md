@@ -28,6 +28,7 @@ This documentation assumes:
     - [`<Transform>`](#transform)
     - [`<Delete>`](#delete)
     - [`<Symbol>` Candidate Selection](#candidates)
+  - [`<If>` Elements](#if)
   - [`<Repeat>` Elements](#repeat)
   - [XML Element `{Expression}`s](#expressions)
   - [`<Import>` Elements](#import)
@@ -325,6 +326,52 @@ Because you can delete elements from a `<Symbol>` when you `<Use>` it, but you c
 #### <a id="candidates"></a>`<Symbol>` Candidate Selection
 
 Most IDEs and code editors can highlight differences between two documents. This can be a useful way of assessing whether two blocks of code have enough similarities to justify converting them to a `<Symbol>`, and it can show what `<Transform>`s and `<Delete>`s are necessary to adapt the `<Symbol>` to each `<Use>` instance. You may need to copy each code block into a separate document to facilitate comparison.
+
+---
+
+### <a id="if"></a>`<If>` Elements
+
+`<If>` elements can be used to conditionally include XML elements. This can be useful for:
+
+* debugging elements; _eg_, displaying diagnostic text
+
+* hard-coded values to be displayed in screenshots
+
+* hard-coded values for assessing Always On Display (AOD) (ambient) mode compliance; _eg_, lengthy strings.
+
+> [!Tip]
+> [Watch Face Format Always On Display Assessor](https://github.com/gondwanasoft/wff-aod) can be used to assess AOD compliance.
+
+#### Usage
+
+`<If>` requires an attribute named `condition`. The value of `condition` should be an [`{expression}`](#expressions). If `condition` evaluates to `True`, all of the `<if>` element's child elements will be retained; otherwise, they will be discarded.
+
+In general, the `condition {expression}` will refer to one or more Python variables that have been defined in a previous [`<Define>` element](#defines).
+
+#### Example
+
+    <If condition="{DEBUG==1}">
+        <PartDraw...>
+            ...
+        </PartDraw>
+        <PartText...>
+            ...
+        </PartText>
+    </If>
+
+#### Notes
+
+The `<If>` element itself is never retained. Only its child elements may be retained, depending on the value of the `condition` attribute.
+
+The `condition` expression is evaluated when the preprocessor runs. Therefore, it can't depend on values that are only available when the watchface is running, such as [WFF data source values](https://developer.android.com/training/wearables/wff/common/attributes/source-type). However, child elements within the `<If>` _can_ refer to such values, since those elements may be parsed when the watchface is running. This can be useful for displaying complication data that might otherwise not be visible.
+
+You can nest `<If>`s within `<If>`s.
+
+Instead of using `<If>`, you can often use XML comment tags (`<!-- -->`) to 'comment out' XML elements. However, this won't work if there are comments within those elements because XML doesn't support nested comments. In addition, if you use `<If>`, you can make your code more readable by using `condition`s such as `"{SCREENSHOT}"`.
+
+You can emulate Python's `elif` and `else` using sequential `<If>` elements with appropriate `condition` expressions.
+
+Python's `if` and `match` statements are more powerful than the simplistic implementation here. If you need the greater flexibility of Python, you can call a Python function in a `<Define>` that performs the conditional test and [returns the XML elements to include](#returning-xml). A disadvantage of this approach is that you need to construct the XML elements using Python code.
 
 ---
 
@@ -715,6 +762,10 @@ When an error occurs, the preprocessor now displays the reported line number of 
 When executed with the `-d` (debug) command-line option, the log is now saved to `debug-pp.txt` instead of being displayed on the console. The state of the XML document at the time of the error is now saved to `debug-pp.xml` (unless the error occurred during initial XML loading).
 
 Most types of error will now be flagged in `debug-pp.xml` by adding an attribute named `xmlpp-error` to the offending element. This isn't possible where the offending element has been removed prior to the error being detected (_eg_, `<Delete href="not-found">`). The actual source of the error could be well below the `xmlpp-error` attribute; it could even be in the element's tail (_ie_, the text between its end-tag and next element's start-tag).
+
+#### Version 2.1.0
+
+[`<If>`](#if) element has been added.
 
 ## <a id="applications"></a>OTHER APPLICATIONS
 

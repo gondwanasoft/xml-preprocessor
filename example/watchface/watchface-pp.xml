@@ -38,6 +38,7 @@
                 )
                 xmlpp_ET.SubElement(rect, "Fill", {"color":"#00FF00"})
             return root
+        SCREENSHOT = False  # True to display values desired in screenshot
     </Define>
 
     <Import href="widgets/ranged-complic/ranged-complic.xml" />
@@ -90,7 +91,12 @@
                             slant="NORMAL"
                             weight="{COMPLIC_TEXT_WEIGHT}">
                             <Template>%s
-                                <Parameter expression="[COMPLICATION.TEXT]" />
+                                <If condition="{SCREENSHOT==False}">
+                                    <Parameter expression="[COMPLICATION.TEXT]" />
+                                </If>
+                                <If condition="{SCREENSHOT==True}">
+                                    <Parameter expression="My Text" />
+                                </If>
                             </Template>
                         </Font>
                     </Text>
