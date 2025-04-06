@@ -676,6 +676,9 @@ Even if the preprocessor completes successfully, it's eminently possible for the
 > [!TIP]
 > Many WFF elements can be given a `name` attribute. Using unique values for `name`s can help you to match elements between your `watchface-pp.xml` and `watchface.xml` files. This can be especially useful since comments in the input file are not included in the output file. Be aware that, if you employ `<Use>` more than once for a particular `<Symbol>`, elements within the `<Symbol>` will be repeated in `watchface.xml` so `name` attributes will no longer be unique.
 
+> [!TIP]
+> You can use XML elements in an [`<If>`](#if) to display debugging information on the watch face while it is running, without having to delete or comment out such elements when building a production release. This can be useful to see the values of [`WFF Data Source Values`](#data-source-values), or values derived from them, since those values aren't available when the preprocessor runs.
+
 #### <a id="pp_log"></a>`pp-log()`
 
 The preprocessor provides a `pp_log()` function that can be called within `watchface-pp.xml` [`<Define>`](#defines) functions and attribute value [`{expression}`](#expressions)s. It prints the value and type of its first argument to the console when `preprocess.py` is executed. Use it like this:
